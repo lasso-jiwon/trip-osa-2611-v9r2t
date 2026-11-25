@@ -314,26 +314,40 @@ function toast(msg) {
 const map = L.map('map', { zoomControl: false, attributionControl: false, preferCanvas: true, worldCopyJump: true })
   .setView([34.68, 135.50], 12);
 
-const TILE_A = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}';
-const TILE_B = 'https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png';
-let tiles = null, tileErr = 0, fallback = false;
-function useTiles(url, label) {
-  if (label) { const c = $('#osmcredit'); if (c) c.innerHTML = label; }
-  if (tiles) map.removeLayer(tiles);
-  const opt = { maxZoom: 19, minZoom: 3, crossOrigin: true };
-  if (url.indexOf('{s}') > -1) opt.subdomains = 'abc';
-  tiles = L.tileLayer(url, opt).addTo(map);
-  tiles.on('tileerror', () => {
-    tileErr++;
-    if (!fallback && tileErr >= 5) {
-      fallback = true; tileErr = 0;
-      useTiles(TILE_B, '&copy; OpenStreetMap contributors');
-      toast('지도 타일을 대체 지도로 전환했습니다');
-    }
+const TILES = {
+  light: {
+    label: '&copy; Esri, HERE, Garmin, &copy; OpenStreetMap',
+    native: 16,
+    urls: ['https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}',
+           'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Reference/MapServer/tile/{z}/{y}/{x}']
+  },
+  street: {
+    label: '&copy; Esri, HERE, Garmin, &copy; OpenStreetMap',
+    native: 19,
+    urls: ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}']
+  }
+};
+let tileLayers = [], tileName = '', tileErr = 0;
+function useTiles(name) {
+  const spec = TILES[name];
+  if (!spec) return;
+  tileLayers.forEach(l => { try { map.removeLayer(l); } catch (e) {} });
+  tileLayers = [];
+  tileName = name;
+  const c = $('#osmcredit');
+  if (c) c.innerHTML = spec.label;
+  spec.urls.forEach((u, i) => {
+    const l = L.tileLayer(u, { maxZoom: 19, maxNativeZoom: spec.native, minZoom: 3, crossOrigin: true, zIndex: i }).addTo(map);
+    l.on('tileerror', () => {
+      if (tileName === name && name !== 'street') {
+        tileErr++;
+        if (tileErr >= 5) { tileErr = 0; useTiles('street'); toast('지도 타일을 대체 지도로 전환했습니다'); }
+      }
+    });
+    tileLayers.push(l);
   });
-  tiles.on('tileload', () => { tileErr = 0; });
 }
-useTiles(TILE_A, '&copy; Esri, HERE, Garmin, &copy; OpenStreetMap');
+useTiles('light');
 
 const layer = L.layerGroup().addTo(map);
 
