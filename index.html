@@ -314,24 +314,26 @@ function toast(msg) {
 const map = L.map('map', { zoomControl: false, attributionControl: false, preferCanvas: true, worldCopyJump: true })
   .setView([34.68, 135.50], 12);
 
-const TILE_A = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
-const TILE_B = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}';
+const TILE_A = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}';
+const TILE_B = 'https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png';
 let tiles = null, tileErr = 0, fallback = false;
 function useTiles(url, label) {
   if (label) { const c = $('#osmcredit'); if (c) c.innerHTML = label; }
   if (tiles) map.removeLayer(tiles);
-  tiles = L.tileLayer(url, { maxZoom: 19, minZoom: 3, crossOrigin: true }).addTo(map);
+  const opt = { maxZoom: 19, minZoom: 3, crossOrigin: true };
+  if (url.indexOf('{s}') > -1) opt.subdomains = 'abc';
+  tiles = L.tileLayer(url, opt).addTo(map);
   tiles.on('tileerror', () => {
     tileErr++;
     if (!fallback && tileErr >= 5) {
       fallback = true; tileErr = 0;
-      useTiles(TILE_B, '&copy; Esri, HERE, Garmin, &copy; OpenStreetMap');
+      useTiles(TILE_B, '&copy; OpenStreetMap contributors');
       toast('지도 타일을 대체 지도로 전환했습니다');
     }
   });
   tiles.on('tileload', () => { tileErr = 0; });
 }
-useTiles(TILE_A, '&copy; OpenStreetMap');
+useTiles(TILE_A, '&copy; Esri, HERE, Garmin, &copy; OpenStreetMap');
 
 const layer = L.layerGroup().addTo(map);
 
