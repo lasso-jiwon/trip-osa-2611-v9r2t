@@ -1,0 +1,772 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!-- 검색엔진 노출 금지 -->
+<meta name="robots" content="noindex, nofollow, noarchive, nosnippet">
+<meta name="googlebot" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="오사카·교토">
+<meta name="theme-color" content="#6C4CF1">
+<meta name="format-detection" content="telephone=no">
+<title>오사카·교토 2박 3일</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%236C4CF1'/%3E%3Ccircle cx='50' cy='44' r='16' fill='%23fff'/%3E%3Cpath d='M50 76l-12-20h24z' fill='%23fff'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      onerror="this.onerror=null;this.href='https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css'">
+<style>
+:root{
+  --pp:#6C4CF1; --pp2:#8B6BFF; --ink:#171623; --ink2:#5A5870; --ink3:#8C8AA0;
+  --line:#ECEBF4; --bg:#F6F5FB; --card:#FFFFFF; --gold:#F5B301;
+  --tabH:58px; --panelH:50dvh; --panelH-fb:50vh;
+  --safeB:env(safe-area-inset-bottom, 0px);
+}
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+html,body{margin:0;padding:0;height:100%;}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Malgun Gothic",system-ui,sans-serif;
+  color:var(--ink); background:#DDDCE4; overflow:hidden;
+  -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+}
+/* ---------- MAP ---------- */
+#map{position:fixed;inset:0;z-index:1;background:#E8E7EF;}
+.leaflet-container{font-family:inherit;}
+.leaflet-control-attribution{font-size:9px;}
+.leaflet-tile{filter:saturate(1.04);}
+.pin{
+  width:30px;height:30px;border-radius:50%;background:linear-gradient(160deg,#8B6BFF,#6C4CF1);
+  border:2.5px solid #fff; box-shadow:0 4px 10px rgba(40,20,90,.38), 0 1px 3px rgba(0,0,0,.2);
+  display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:13px;
+  font-variant-numeric:tabular-nums; letter-spacing:-.02em; position:relative;
+}
+.pin.hot{background:linear-gradient(160deg,#FF9A6B,#F5537A);}
+.pin.active{transform:scale(1.16); box-shadow:0 0 0 2px #fff,0 0 0 5px rgba(108,76,241,.45),0 6px 16px rgba(40,20,90,.5); z-index:5;}
+.pin-wrap{transition:transform .18s ease;}
+.pin-num{position:relative;top:-.5px;}
+.pin-hot-dot{position:absolute;top:-3px;right:-3px;width:9px;height:9px;border-radius:50%;background:#FFD84D;border:1.5px solid #fff;}
+.cly{min-width:30px;height:27px;padding:0 8px;border-radius:14px;background:rgba(108,76,241,.95);border:2px solid #fff;
+  color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;
+  letter-spacing:-.02em;box-shadow:0 4px 12px rgba(40,20,90,.42);font-variant-numeric:tabular-nums;white-space:nowrap;}
+.cly.sel{background:linear-gradient(160deg,#FF9A6B,#F5537A);}
+.leaflet-popup.cp .leaflet-popup-content-wrapper{border-radius:14px;box-shadow:0 8px 26px rgba(30,20,70,.25);}
+.leaflet-popup.cp .leaflet-popup-content{margin:8px;min-width:180px;}
+.cpl{display:flex;flex-direction:column;gap:2px;}
+.cpl button{border:0;background:none;text-align:left;font:inherit;font-size:12px;color:#2A2740;
+  padding:7px 6px;border-radius:8px;display:flex;gap:6px;align-items:center;cursor:pointer;}
+.cpl button:active{background:#F1EDFF;}
+.cpl button b{display:inline-flex;width:18px;height:18px;border-radius:50%;background:var(--pp);color:#fff;
+  font-size:10px;align-items:center;justify-content:center;flex:0 0 auto;}
+/* ---------- TOP BAR ---------- */
+#osmcredit{position:fixed;left:12px;top:calc(env(safe-area-inset-top, 0px) + 52px);z-index:14;
+  font-size:9px;font-weight:600;color:#4A4860;background:rgba(255,255,255,.82);padding:2px 6px;border-radius:5px;
+  letter-spacing:.01em;pointer-events:none;}
+#topbar{position:fixed;top:0;left:0;right:0;z-index:15;display:flex;justify-content:space-between;
+  padding:calc(env(safe-area-inset-top, 0px) + 10px) 12px 0 12px;pointer-events:none;}
+.daypill{pointer-events:auto;display:flex;align-items:center;gap:8px;background:rgba(23,22,35,.88);
+  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);color:#fff;border-radius:999px;
+  padding:8px 13px 8px 11px;font-size:12.5px;font-weight:700;box-shadow:0 6px 18px rgba(0,0,0,.22);}
+.daypill b{font-weight:800;letter-spacing:.01em;}
+.daypill .sep{width:1px;height:11px;background:rgba(255,255,255,.28);}
+.daypill .y{opacity:.72;font-weight:600;}
+.mapbtns{display:flex;gap:8px;pointer-events:auto;}
+.mapbtns button{width:40px;height:40px;border-radius:50%;border:0;background:rgba(255,255,255,.96);
+  color:#2A2740;font-size:17px;font-weight:700;line-height:1;box-shadow:0 4px 14px rgba(0,0,0,.2);
+  display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;}
+.mapbtns button:active{transform:scale(.94);}
+.mapbtns button.on{background:var(--pp);color:#fff;}
+/* ---------- PANEL ---------- */
+#panel{position:fixed;left:0;right:0;bottom:calc(var(--tabH) + var(--safeB));z-index:20;
+  height:var(--panelH-fb);height:var(--panelH);
+  background:var(--card);border-radius:22px 22px 0 0;
+  box-shadow:0 -10px 34px rgba(30,20,70,.16);
+  display:flex;flex-direction:column;overflow:hidden;
+  transition:height .3s cubic-bezier(.3,.9,.3,1);}
+#panel.small{height:27vh;height:27dvh;}
+.ph{flex:0 0 auto;padding:8px 18px 0 18px;}
+.grab{width:38px;height:4px;border-radius:3px;background:#DCDAED;margin:0 auto 10px;}
+.phrow{display:flex;align-items:baseline;gap:8px;}
+.phrow h2{margin:0;font-size:18.5px;font-weight:800;letter-spacing:-.03em;}
+.phrow .sub{font-size:12px;color:var(--ink3);font-weight:600;}
+.phnote{margin:6px 0 0;font-size:12px;line-height:1.5;color:var(--ink2);}
+.wx{display:flex;gap:6px;overflow-x:auto;margin:10px -18px 0 -18px;padding:0 18px 2px;scrollbar-width:none;}
+.wx::-webkit-scrollbar{display:none;}
+.wxc{flex:0 0 auto;display:flex;align-items:center;gap:6px;background:var(--bg);border:1px solid var(--line);
+  border-radius:10px;padding:6px 9px;font-size:11.5px;color:var(--ink2);white-space:nowrap;}
+.wxc b{color:var(--ink);font-weight:700;}
+.wxc .ic{font-size:13px;}
+#scroll{flex:1 1 auto;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;
+  padding:10px 14px 26px 14px;}
+.card{display:flex;gap:11px;background:var(--card);border:1px solid var(--line);border-radius:16px;
+  padding:11px 12px;margin:0 0 9px 0;cursor:pointer;position:relative;transition:border-color .15s, box-shadow .15s, transform .1s;}
+.card:active{transform:scale(.988);}
+.card.sel{border-color:#CFC4FF;box-shadow:0 6px 18px rgba(108,76,241,.14);}
+.cnum{flex:0 0 auto;width:26px;height:26px;border-radius:50%;background:var(--pp);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-size:12.5px;font-weight:800;margin-top:2px;}
+.card.hot .cnum{background:linear-gradient(160deg,#FF9A6B,#F5537A);}
+.cbody{flex:1 1 auto;min-width:0;}
+.ctime{font-size:11.5px;font-weight:700;color:var(--pp);letter-spacing:.01em;display:flex;gap:6px;align-items:center;}
+.ctime .stay{color:var(--ink3);font-weight:600;}
+.cname{font-size:14.5px;font-weight:750;margin:2px 0 0;letter-spacing:-.02em;line-height:1.3;}
+.csum{font-size:11.8px;color:var(--ink2);line-height:1.5;margin:4px 0 0;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.cchips{display:flex;gap:5px;margin-top:7px;flex-wrap:wrap;}
+.chip{font-size:10.5px;font-weight:650;color:#5B48C9;background:#F1EDFF;border-radius:6px;padding:2.5px 6px;}
+.card.hot .chip{color:#C2415F;background:#FFEFF3;}
+.card.now{border-color:#F3C34B;background:#FFFDF4;box-shadow:0 6px 18px rgba(245,179,1,.16);}
+.nowtag{position:absolute;top:-8px;right:10px;background:var(--gold);color:#3B2B00;font-size:9.5px;font-weight:800;
+  padding:2px 7px;border-radius:7px;letter-spacing:.02em;}
+.daysum{display:flex;gap:6px;align-items:center;justify-content:space-between;font-size:11px;color:var(--ink3);margin:2px 2px 10px;font-weight:600;}
+.daysum>span{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.fitlink{flex:0 0 auto;border:0;background:#F1EDFF;color:#5B48C9;font:inherit;font-size:10.5px;font-weight:750;
+  padding:5px 9px;border-radius:8px;cursor:pointer;}
+/* ---------- TABS ---------- */
+#tabs{position:fixed;left:0;right:0;bottom:0;z-index:40;height:calc(var(--tabH) + var(--safeB));
+  padding:0 6px var(--safeB) 6px;display:flex;align-items:stretch;gap:2px;
+  background:rgba(255,255,255,.97);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  border-top:1px solid var(--line);}
+#tabs button{flex:1 1 0;border:0;background:none;font:inherit;color:var(--ink3);cursor:pointer;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:0;position:relative;}
+#tabs button .t1{font-size:11.5px;font-weight:800;letter-spacing:-.01em;}
+#tabs button .t2{font-size:9.5px;font-weight:600;opacity:.85;}
+#tabs button.on{color:var(--pp);}
+#tabs button.on:before{content:'';position:absolute;top:0;left:24%;right:24%;height:3px;border-radius:0 0 3px 3px;background:var(--pp);}
+#tabs button .dot{position:absolute;top:4px;right:4px;min-width:15px;height:15px;border-radius:8px;
+  background:var(--gold);color:#3B2B00;font-size:9px;font-weight:800;display:flex;align-items:center;justify-content:center;
+  padding:0 3px;border:1.5px solid #fff;box-sizing:content-box;}
+/* ---------- DETAIL ---------- */
+#detail{position:fixed;left:0;right:0;bottom:calc(var(--tabH) + var(--safeB));z-index:30;
+  height:72dvh;height:72vh;background:var(--card);border-radius:22px 22px 0 0;
+  box-shadow:0 -12px 40px rgba(25,15,60,.26);transform:translateY(112%);
+  transition:transform .34s cubic-bezier(.32,.92,.3,1);display:flex;flex-direction:column;overflow:hidden;}
+#detail.open{transform:translateY(0);}
+.dwrap{display:flex;flex-direction:column;height:100%;overflow:hidden;}
+.dgrab{flex:0 0 auto;padding:9px 0 4px;touch-action:none;cursor:grab;}
+.dgrab:before{content:'';display:block;width:40px;height:4px;border-radius:3px;background:#DCDAED;margin:0 auto;}
+#dbody{flex:1 1 auto;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding:0 18px 30px;}
+.dhead{display:flex;gap:11px;align-items:flex-start;padding:2px 0 4px;}
+.dnum{flex:0 0 auto;width:32px;height:32px;border-radius:50%;background:var(--pp);color:#fff;display:flex;
+  align-items:center;justify-content:center;font-weight:800;font-size:14px;margin-top:2px;}
+.dnum.hot{background:linear-gradient(160deg,#FF9A6B,#F5537A);}
+.dhead .hx{flex:1 1 auto;min-width:0;}
+.dtime{font-size:12px;font-weight:800;color:var(--pp);}
+.dtime .stay{color:var(--ink3);font-weight:600;}
+.dhead h3{margin:2px 0 0;font-size:18px;line-height:1.28;letter-spacing:-.035em;font-weight:800;}
+.djp{margin-top:2px;font-size:11.5px;color:var(--ink3);font-weight:600;}
+.dclose{flex:0 0 auto;width:30px;height:30px;border-radius:50%;border:0;background:var(--bg);color:var(--ink2);
+  font-size:14px;font-weight:700;cursor:pointer;margin-top:2px;}
+.dcat{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;color:#5B48C9;
+  background:#F1EDFF;border-radius:7px;padding:3px 7px;margin-top:8px;}
+.dleg{display:flex;gap:7px;align-items:center;background:var(--bg);border:1px solid var(--line);border-radius:11px;
+  padding:7px 10px;margin-top:9px;font-size:11.5px;color:var(--ink2);font-weight:600;}
+.dleg b{color:var(--ink);font-weight:750;}
+.dsum{font-size:13px;line-height:1.62;color:#33314A;margin:11px 0 0;}
+.sect{margin-top:19px;}
+.sect h4{margin:0 0 9px;font-size:12.5px;font-weight:800;letter-spacing:.01em;color:var(--ink);
+  display:flex;align-items:center;gap:6px;}
+.sect h4:before{content:'';width:3px;height:12px;border-radius:2px;background:var(--pp);}
+ol.steps{list-style:none;margin:0;padding:0;counter-reset:s;}
+ol.steps>li{counter-increment:s;position:relative;padding:0 0 13px 30px;}
+ol.steps>li:before{content:counter(s);position:absolute;left:0;top:1px;width:20px;height:20px;border-radius:50%;
+  background:#F1EDFF;color:var(--pp);font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;}
+ol.steps>li:not(:last-child):after{content:'';position:absolute;left:9.5px;top:24px;bottom:2px;width:1.5px;background:#EEEAFF;}
+.st{font-size:13.5px;font-weight:750;line-height:1.4;letter-spacing:-.015em;}
+.sb{font-size:12.8px;line-height:1.62;color:#42405C;margin-top:3px;}
+.sb b{font-weight:750;color:#1F1D33;}
+.jp{margin-top:8px;background:#FFF9E9;border:1px solid #F6E7B8;border-left:3px solid var(--gold);border-radius:9px;
+  padding:9px 10px;position:relative;}
+.jp .jpt{font-size:13.5px;font-weight:700;color:#3A2E05;line-height:1.45;letter-spacing:-.01em;}
+.jp .jpr{font-size:11px;color:#8A7420;margin-top:3px;line-height:1.45;}
+.jp button{position:absolute;right:7px;top:7px;border:1px solid #EBD79A;background:#fff;color:#7A6516;
+  border-radius:7px;font:inherit;font-size:10px;font-weight:700;padding:3px 7px;cursor:pointer;}
+.jp button:active{background:#FFF3CE;}
+.dsch{margin-top:8px;background:#fff;border:1px solid var(--line);border-radius:9px;padding:9px 10px;}
+.dsch .r{padding:7px 0;border-bottom:1px dashed #F0EFF7;}
+.dsch .r:last-child{border-bottom:0;}
+.dsch .r .tm{font-size:11px;font-weight:800;color:var(--pp);letter-spacing:.02em;margin-bottom:3px;}
+.dsch .r .tx{font-size:12px;color:var(--ink);font-weight:600;line-height:1.5;}
+.dsch .r .nb{font-size:10.5px;color:var(--ink3);margin-top:2px;line-height:1.4;font-weight:500;}
+.dinfo .r{display:flex;gap:8px;padding:6px 0;border-bottom:1px solid #F5F4FA;font-size:12.5px;line-height:1.5;}
+.dinfo .r:last-child{border-bottom:0;}
+.dinfo .k{flex:0 0 66px;font-weight:650;color:var(--ink3);font-size:12px;}
+.dinfo .v{flex:1 1 auto;min-width:0;color:var(--ink);font-weight:600;}
+.dinfo .v b{font-weight:750;}
+.mbtn{display:flex;gap:8px;margin-top:10px;}
+.mbtn a{flex:1 1 0;text-align:center;text-decoration:none;font-size:12.5px;font-weight:750;border-radius:10px;padding:10px 4px;}
+.mbtn .m1{background:var(--pp);color:#fff;}
+.mbtn .m2{background:#F1EDFF;color:#5B48C9;}
+.warn{display:flex;gap:8px;background:#FFF3F4;border:1px solid #FFDDE1;border-radius:11px;padding:9px 10px;
+  font-size:12.3px;line-height:1.6;color:#8E2F42;margin-bottom:7px;font-weight:600;}
+.warn .ic{flex:0 0 auto;}
+.tip{display:flex;gap:8px;background:#F2FBF6;border:1px solid #D6F1E2;border-radius:11px;padding:9px 10px;
+  font-size:12.3px;line-height:1.6;color:#1F6344;margin-bottom:7px;font-weight:600;}
+.tip .ic{flex:0 0 auto;}
+/* ---------- CHECKLIST ---------- */
+.cprog{display:flex;align-items:center;gap:10px;background:linear-gradient(140deg,#6C4CF1,#8B6BFF);
+  border-radius:14px;padding:12px 14px;color:#fff;margin:0 0 12px;}
+.cprog .pn{font-size:20px;font-weight:850;letter-spacing:-.03em;font-variant-numeric:tabular-nums;}
+.cprog .pl{font-size:11px;opacity:.9;line-height:1.4;font-weight:600;}
+.cprog .bar{flex:1 1 auto;height:6px;border-radius:4px;background:rgba(255,255,255,.28);overflow:hidden;}
+.cprog .bar i{display:block;height:100%;background:#fff;border-radius:4px;transition:width .3s;}
+.gtitle{font-size:12px;font-weight:800;color:var(--ink3);margin:14px 4px 7px;letter-spacing:.02em;}
+label.ci{display:flex;gap:10px;align-items:flex-start;background:var(--card);border:1px solid var(--line);
+  border-radius:12px;padding:11px 12px;margin-bottom:7px;cursor:pointer;}
+label.ci input{appearance:none;-webkit-appearance:none;flex:0 0 auto;width:20px;height:20px;border:1.8px solid #CFCCE2;
+  border-radius:6px;background:#fff;margin:0;position:relative;margin-top:1px;transition:all .15s;}
+label.ci input:checked{background:var(--pp);border-color:var(--pp);}
+label.ci input:checked:after{content:'';position:absolute;left:6px;top:2.5px;width:5px;height:10px;
+  border:solid #fff;border-width:0 2px 2px 0;transform:rotate(43deg);}
+label.ci .ci-t{font-size:13px;font-weight:650;line-height:1.42;letter-spacing:-.01em;}
+label.ci .ci-n{font-size:10.5px;color:var(--ink3);margin-top:2px;font-weight:600;}
+label.ci input:checked ~ .ci-box .ci-t{color:var(--ink3);text-decoration:line-through;}
+.ci-box{flex:1 1 auto;min-width:0;}
+.memo{margin-top:14px;}
+.memo textarea{width:100%;min-height:110px;border:1px solid var(--line);border-radius:12px;padding:11px;
+  font:inherit;font-size:13px;line-height:1.6;resize:vertical;background:#FCFBFF;color:var(--ink);}
+.memo textarea:focus{outline:2px solid #DCD3FF;border-color:#CFC4FF;}
+.memo .mh{display:flex;justify-content:space-between;align-items:center;margin:0 2px 7px;}
+.memo .mh b{font-size:12.5px;}
+.memo .mh span{font-size:10.5px;color:#2E9E67;font-weight:700;opacity:0;transition:opacity .3s;}
+.memo .mh span.show{opacity:1;}
+.rv{background:var(--card);border:1px solid var(--line);border-radius:13px;padding:11px 12px;margin-bottom:8px;}
+.rv .rh{display:flex;gap:7px;align-items:center;font-size:13px;font-weight:800;margin-bottom:7px;}
+.rv .rr{display:flex;gap:8px;font-size:12px;padding:3px 0;line-height:1.5;}
+.rv .rr .k{flex:0 0 62px;color:var(--ink3);font-weight:650;font-size:11.5px;}
+.rv .rr .v{flex:1 1 auto;font-weight:650;}
+.rv .rr .v b{font-weight:800;}
+.tips .rr{display:flex;gap:8px;font-size:12.3px;line-height:1.55;padding:6px 0;border-bottom:1px solid #F5F4FA;}
+.tips .rr:last-child{border-bottom:0;}
+.tips .rr .k{flex:0 0 62px;font-weight:800;font-size:11px;color:#5B48C9;padding-top:1px;}
+.credit{font-size:10px;color:var(--ink3);line-height:1.5;margin:16px 2px 0;text-align:center;}
+.credit a{color:inherit;}
+.reset{display:block;width:100%;margin-top:14px;border:1px solid var(--line);background:#fff;color:var(--ink3);
+  font:inherit;font-size:11.5px;font-weight:700;padding:9px;border-radius:10px;cursor:pointer;}
+.hidden{display:none !important;}
+@media (min-width: 760px){
+  #panel,#detail,#tabs,#topbar{max-width:520px;margin-left:auto;margin-right:auto;}
+  #panel,#detail{border-radius:22px 22px 0 0;}
+  #osmcredit{left:calc(50% - 260px + 12px);}
+}
+#toast{position:fixed;left:50%;bottom:calc(var(--tabH) + var(--safeB) + 16px);transform:translate(-50%,20px);
+  background:rgba(23,22,35,.94);color:#fff;font-size:12px;font-weight:700;padding:9px 14px;border-radius:999px;
+  z-index:60;opacity:0;transition:all .25s;pointer-events:none;max-width:80vw;text-align:center;}
+#toast.show{opacity:1;transform:translate(-50%,0);}
+</style>
+</head>
+<body>
+<div id="map"></div>
+
+<div id="osmcredit">&copy; OpenStreetMap</div>
+
+<div id="topbar">
+  <div class="daypill" id="daypill"><b id="pillDay">Day 1</b><i class="sep"></i><span class="y" id="pillWhere">오사카</span><i class="sep"></i><span class="y" id="pillDate">11/28 토</span></div>
+  <div class="mapbtns">
+    <button id="btnFit" aria-label="전체 경로 보기">⤢</button>
+    <button id="btnExpand" aria-label="지도 높이">⤒</button>
+  </div>
+</div>
+
+<section id="panel">
+  <div class="ph">
+    <div class="grab"></div>
+    <div class="phrow"><h2 id="pH2">Day 1</h2><span class="sub" id="pSub"></span></div>
+    <p class="phnote hidden" id="pNote"></p>
+    <div class="wx" id="wx"></div>
+  </div>
+  <div id="scroll"></div>
+</section>
+
+<nav id="tabs"></nav>
+
+<div id="detail"><div class="dwrap"><div class="dgrab" id="dgrab"></div><div id="dbody"></div></div></div>
+<div id="toast"></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>window.L||document.write('<scr'+'ipt src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"><\/scr'+'ipt>');</script>
+<script>
+const D = {"days": [{"id": "d1", "label": "Day 1", "tab": "Day 1 11/28 토", "date": "11/28 토", "where": "오사카", "theme": "입국 · 진료 · 캐릭터샵 · 도톤보리", "note": "☔ 비 97% · 9~18℃. 아케이드·백화점·마트 실내 동선이라 일정은 그대로 — 큰 우산과 젖어도 되는 신발.", "stops": [{"n": 1, "time": "09:55–10:40", "stay": "입국 45분", "name": "간사이 국제공항 T1", "jp": "関西国際空港 第1ターミナル", "cat": "✈️ 도착", "chips": ["TW301", "ATM 현금", "컨택리스"], "hot": true, "lat": 34.4348282, "lng": 135.2446195, "query": "関西国際空港 第1ターミナル", "sum": "TW301 09:55 착륙. 입국심사·수하물 45분 → 1층 ATM에서 엔화 → 2층 연결통로로 난카이 역. 표 없이 카드 태그로 바로 탑승.", "leg": null, "steps": [["비짓재팬웹 QR 먼저 꺼내기", "미리 캡처해 둔 QR을 잠금화면 위젯이나 사진첩 최근 항목에 두면 입국심사에서 바로 제시할 수 있습니다. 세관신고서는 기내에서 받아 미리 작성.", null, null], ["수하물 찾고 1층 도착 로비로", "입국심사 → 수하물 벨트 → 세관 → 나오면 바로 1층 도착 로비. 여기서 현금을 뽑습니다.", null, null], ["1층 ATM에서 1~2만 엔 인출", "도착 로비의 세븐뱅크·로손 ATM에서 인출. 화면에서 지폐 단위를 고를 수 있으니 <b>1,000엔권 위주</b>로. 신한 쏠트래블·트래블월렛은 해외 ATM 인출 수수료가 우대되는 카드 — 애플페이 스이카 충전이 안 되는 카드라 현금이 필수입니다.", "このATMで現金を引き出せますか？", "코노 ATM데 겐킨오 히키다세마스카?"], ["2층 연결통로 → 난카이 간사이공항역", "에스컬레이터로 2층에 올라 <b>에어로플라자</b> 방향 연결통로를 건너면 바로 역. 도보 3~5분, 구간 전체가 지붕으로 덮여 있습니다.", null, null], ["표 없이 컨택리스 카드로 개찰 태그", "개찰구 단말기에 와이파이 마크가 있는 <b>컨택리스 신용·체크카드</b>를 태그하고 통과. 요금 970엔은 하차할 때 정산됩니다.", null, null], ["공항급행 1번선 — 10:17편 목표", "종점이 난바인 통근형 급행, 자유석 46분. 놓치면 10:32편(11:35 도착)이 다음 카드입니다. 큰 캐리어는 문 옆 공간에.", null, null]], "sched": [["10:17", "空港急行 · <b>970엔</b> · 승차 46분", "11:20 난바 도착 (실제 조회)"], ["10:28", "特急ラピートβ · <b>1,670엔</b> · 전석 지정석", "11:22 도착 · 승차 37분"], ["10:32", "空港急行 · <b>970엔</b>", "11:35 도착 — 늦어도 이 편"]], "info": [["위치", "1층 도착 로비 · 2층 연결통로"], ["운영", "24시간"], ["항공", "TW301 07:55 인천 T1 → 09:55 간사이 T1"], ["환전", "ATM이 환전 창구보다 환율·수수료 유리"]], "warns": ["09:55 착륙 후 입국·수하물에 35~45분 걸립니다. 10:17편은 빠듯하니 <b>10:32편</b>을 기준으로 잡아도 일정은 맞습니다."], "tips": ["난카이 요금은 카드사 정산 환율로 청구되고 해외이용수수료(보통 1~2%)가 붙습니다.", "수하물 나온 뒤 화장실 먼저 — 난바까지 45분입니다."]}, {"n": 2, "time": "11:30–12:20", "stay": "짐 보관 50분", "name": "베셀 인 난바 (짐 보관)", "jp": "ベッセルインなんば", "cat": "🏨 숙소", "chips": ["짐 보관", "개인 냉장고", "도톤보리"], "hot": true, "lat": 34.6686548, "lng": 135.4995612, "query": "ベッセルインなんば 大阪", "sum": "난카이 난바역에서 난바워크 지하상가로 비 안 맞고 이동. 프런트에 짐만 맡기고 바로 클리닉으로 출발.", "leg": ["🚶", "난바워크 경유", "0.9km · 10~12분"], "steps": [["난카이 3층 개찰 → 난바워크(지하상가)로", "개찰을 나와 2층으로 내려가 <b>난바워크</b> 입구로. 지하상가를 따라 B20·B16 출구 방향으로 걸으면 비를 피할 수 있습니다.", null, null], ["지상으로 올라와 도보 3~5분", "출구에서 도톤보리 입구 방향. 캐리어를 끌면 역에서 호텔까지 <b>12분</b> 잡으세요(0.9km 실측).", null, null], ["프런트에 짐 보관 요청", "체크인 전인데 짐 맡길 수 있는지 물어보고 보관증을 받습니다. 정식 체크인은 14:00부터지만 15:05에 돌아와 체크인합니다.", "チェックイン前に荷物を預かっていただけますか？", "체쿠인 마에니 니모츠오 아즈캇테 이타다케마스카?"], ["가방 정리 — 약 넣을 자리 비워두기", "클리닉에서 받을 3개월분이 들어갈 공간과 보냉백을 챙겨 나갑니다. 큰 캐리어는 호텔에 두고 작은 가방만.", null, null]], "sched": [["11:20", "난카이 난바 도착", "10:17편 기준"], ["11:30", "숙소 도착 · <b>짐 보관</b>", "10:32편이면 11:45"], ["12:25", "클리닉으로 출발", "도보 14분"]], "info": [["주소", "大阪市中央区道頓堀2-2-18"], ["전화", "06-6211-7071"], ["체크인", "14:00 / 체크아웃 11:00"], ["예약", "아고다 · 1인 더블룸 · 예약번호는 아고다 앱에서 확인"]], "warns": ["마운자로를 받은 뒤 15:05 체크인 전까지는 들고 다녀야 합니다. 보냉백을 반드시 챙기세요."], "tips": ["프런트에서 여권 사본을 요구할 수 있으니 체크인 때 여권 준비."]}, {"n": 3, "time": "13:00–14:00", "stay": "진료 60분", "name": "슬림클리닉 신사이바시점", "jp": "AND美容外科 心斎橋院 (ケーズビル10F)", "cat": "💉 진료", "chips": ["13:00 예약", "3개월분", "영문 증명서"], "hot": true, "lat": 34.6762702, "lng": 135.5014729, "query": "AND美容外科 心斎橋院", "sum": "아케이드 지붕 아래로 북쪽 직진 1.0km. 케이즈빌딩 10층 — 예약 확인서·여권 제시 → 문진표 → 진료 → 마운자로 3개월분 수령.", "leg": ["🚶", "신사이바시스지 아케이드 직진", "1.0km · 14분"], "steps": [["신사이바시스지 아케이드로 들어가 북쪽 직진", "도톤보리 → 에비스바시 → <b>신사이바시스지</b> → 미나미센바(南船場) 방향. 아케이드 전체가 지붕이라 비를 맞지 않습니다. 1.0km · 도보 14분(실측).", null, null], ["케이즈빌딩(ケーズビル心斎橋) 10층", "빌딩 입구 간판에 <b>AND美容外科</b>. 엘리베이터로 10층, 내리면 바로 접수처입니다.", null, null], ["접수 — 예약 확인서와 여권 제시", "톡·캘린더에 저장해 둔 <b>예약 확인서</b>와 여권을 함께 제시하고 사전 문진표 작성 여부를 확인. 아직 안 썼으면 여기서 작성합니다.", null, null], ["상담 · 진료", "체중·복용 이력 확인 후 처방. 마운자로 2.5mg 1개월분 + 5mg 2개월분, 총 12펜. 결제는 카드 가능.", null, null], ["영문 처방증명서 요청 — 이 자리에서", "이번 예약에는 포함되어 있지 않습니다. 필요하면 접수처에 이렇게 말하세요. 별도 요금(3,300~8,800엔), 발급 10~20분.", "英語の処方証明書をお願いできますか？", "에이고노 쇼호쇼메이쇼오 오네가이데키마스카?"], ["약 수령 → 보냉백에 넣고 숙소로", "실온 30℃ 이하에서 단기 이동은 가능하지만 다음 일정이 1시간이라 보냉백이 안전합니다. 영수증은 세관 신고용으로 따로 보관.", null, null]], "sched": [["12:25", "숙소 출발", null], ["12:40", "클리닉 도착 · 문진표 작성", null], ["13:00", "진료 시작", null], ["14:00", "수령 · 결제 완료", null]], "info": [["주소", "大阪市中央区南船場3-6-18 ケーズビル心斎橋 10F"], ["전화", "06-4400-5018"], ["진료", "09:00–20:00 (토요일 동일)"], ["예약", "11/28(토) 13:00 · 확인서는 톡·캘린더"], ["처방", "마운자로 2.5mg 1개월 + 5mg 2개월 (12펜)"]], "warns": ["지각하면 예약이 밀릴 수 있습니다. 12:40 도착 목표. 늦으면 <b>06-4400-5018</b>로 바로 전화."], "tips": ["수령 직후 약은 가방 안쪽, 직사광선 피하기.", "영수증·처방전은 사진으로 찍어 폰에 남겨두면 세관에서 편합니다."]}, {"n": 4, "time": "14:00–14:50", "stay": "점심 50분", "name": "규카츠 모토무라 도톤보리점", "jp": "牛カツ 本村 道頓堀店", "cat": "🍱 점심", "chips": ["돌판 규카츠", "브레이크타임 X", "줄 주의"], "hot": true, "lat": 34.6692891, "lng": 135.5006608, "query": "牛カツ本村 道頓堀店 大阪", "sum": "클리닉에서 아케이드 직진 도보 12분. 11:00~22:00 브레이크타임 없음 — 14시면 점심 피크가 지나 대기가 짧습니다.", "leg": ["🚶", "신사이바시스지 아케이드", "0.9km · 12분"], "steps": [["클리닉 → 아케이드 직진 남쪽 12분", "케이즈빌딩에서 신사이바시스지 아케이드를 따라 도톤보리 방향으로 내려옵니다. 지붕이 있어 비를 맞지 않습니다.", null, null], ["고어커스시티(ゴアクスシティ) B1F", "신사이바시스지 2-4-2, 지하 1층. 계단 입구에 <b>牛カツ</b> 간판이 있습니다.", null, null], ["대기 — 이름과 인원 적기", "줄이 길면 입구 보드에 이름을 적고 기다립니다. 14시 전후면 10~20분 수준.", "一人です", "히토리 데스 · 1인"], ["규카츠 정식 주문 · 토로로 세트 추천", "<b>牛カツ定食</b>(1,500~2,000엔)에 토로로 세트를 더하면 국물·밥이 함께 나옵니다. 미디엄레어로 나오니 <b>돌판에서 원하는 만큼만</b> 익혀 먹기.", null, null], ["30분 이상 줄이면 대안 지점", "같은 브랜드 <b>난바점(難波店)</b> 또는 <b>니시신사이바시점(西心斎橋店)</b>으로. 메뉴·가격 동일합니다.", null, null]], "sched": [["14:00", "입장 · 주문", null], ["14:45", "식사 마무리 · 숙소로", "도보 2분"]], "info": [["주소", "大阪市中央区心斎橋筋2-4-2 ゴアクスシティ B1F"], ["영업", "매일 11:00–22:00 · 브레이크타임 없음"], ["가격", "정식 1,500~2,000엔 · 카드 가능"], ["평점", "4.9 (리뷰 10,700+)"]], "warns": ["토요일 13:30~14:30은 대기 30~60분까지 늘 수 있습니다. 15:05 체크인을 위해 <b>14:00 도착</b>을 지키세요."], "tips": ["돌판에서 익히면 연기가 납니다 — 겉옷은 의자 등받이에 걸기.", "밥 리필(おかわり) 가능 여부를 물어보면 좋습니다."]}, {"n": 5, "time": "15:05–15:35", "stay": "체크인 30분", "name": "베셀 인 난바 (체크인 · 약 냉장)", "jp": "ベッセルインなんば", "cat": "🧊 체크인", "chips": ["15:05 체크인", "냉장 보관", "짧은 휴식"], "hot": true, "lat": 34.6686548, "lng": 135.4995612, "query": "ベッセルインなんば 大阪", "sum": "모토무라에서 도보 2분 코앞. 체크인 후 방의 개인 냉장고 안쪽 칸에 마운자로 12펜을 넣고 20분 쉬어갑니다.", "leg": ["🚶", "도보", "0.2km · 2분"], "steps": [["모토무라에서 도보 2분", "도톤보리 방향으로 한 블록. 프런트에서 여권을 제시하고 체크인.", null, null], ["짐 찾아 방으로 — 약부터 냉장고", "맡긴 짐을 받고 방으로 올라가 <b>개인 냉장고 안쪽 칸</b>에 12펜 전부 넣습니다. 문 쪽 선반은 온도가 오르니 피하고 냉동실은 절대 금지.", null, null], ["보냉백·아이스팩은 펼쳐 말리기", "귀국 때 다시 쓸 보냉백을 습기 없이 보관하고, 아이스팩은 냉동실이 아니라 냉장고 아래칸에.", null, null], ["20분 휴식", "충전·화장실·옷 갈아입기. 15:45 파르코까지 여유 10분입니다.", null, null]], "sched": [["15:05", "체크인", null], ["15:10", "마운자로 <b>냉장 보관</b>", null], ["15:40", "파르코로 출발", null]], "info": [["주소", "大阪市中央区道頓堀2-2-18"], ["전화", "06-6211-7071"], ["조식", "포함 여부는 체크인 때 확인"]], "warns": ["약을 냉장고에 넣는 걸 잊고 방을 나오는 게 가장 흔한 실수 — 문 나서기 전 냉장고 문 확인."], "tips": ["수건·어메니티 위치를 미리 확인해 두면 밤에 편합니다."]}, {"n": 6, "time": "15:45–17:05", "stay": "1시간 20분", "name": "신사이바시 파르코 · 다이마루", "jp": "心斎橋PARCO / 大丸心斎橋店", "cat": "🛍️ 캐릭터샵", "chips": ["캐릭터샵", "무인양품", "포켓몬·점프"], "hot": true, "lat": 34.6738473, "lng": 135.5009574, "query": "心斎橋PARCO 大阪", "sum": "파르코 6F 캐릭터샵·무인양품 → 건너편 다이마루 9F 포켓몬센터·점프샵. 두 곳 다 20:00 마감이라 오늘 안에 끝냅니다.", "leg": ["🚶", "도보", "0.5km · 7분"], "steps": [["신사이바시 파르코 6F 캐릭터샵", "캐릭터 굿즈 층. 무인양품이 같은 건물 안에 이어집니다. 엘리베이터보다 에스컬레이터가 빠릅니다.", null, null], ["다이마루 9F 포켓몬센터 오사카 DX · 점프샵", "파르코 맞은편 다이마루 본관 9F. 포켓몬센터와 포켓몬 카페, 점프샵(ジャンプショップ)이 같은 층입니다.", null, null], ["면세 카운터 위치 확인", "여권 + 5,000엔 이상. 계산 전에 면세 카운터가 어디인지 물어보면 동선이 줄어듭니다.", null, null]], "sched": [["15:45", "파르코 6F", null], ["16:25", "다이마루 9F", null], ["17:05", "아케이드로", null]], "info": [["파르코", "心斎橋筋1-8-3 · 10:00–20:00"], ["다이마루", "心斎橋筋1-7-1 · 10:00–20:00"], ["면세", "여권 필요 · 5,000엔 이상"]], "warns": ["백화점은 20:00 마감 — 저녁 일정 뒤에 다시 오기 어렵습니다."], "tips": ["무거운 굿즈는 숙소에 두고 나오는 게 낫습니다(도보 10분)."]}, {"n": 7, "time": "17:15–18:30", "stay": "1시간 15분", "name": "신사이바시스지 아케이드", "jp": "心斎橋筋商店街", "cat": "🛍️ 산책", "chips": ["지붕 있음", "유니클로·GU", "히트텍"], "hot": false, "lat": 34.6725086, "lng": 135.5013657, "query": "心斎橋筋商店街 大阪", "sum": "지붕 있는 아케이드 산책. 내일 아침 교토가 7℃라 히트텍 한 장이 하루를 바꿉니다. 우산도 여기서.", "leg": ["🚶", "도보", "0.4km · 6분"], "steps": [["유니클로·GU에서 히트텍 확인", "교토 아침 6~7℃ 예보. 얇은 발열 내의 한 장이면 하루가 달라집니다. 우산도 이 안에서 저렴하게.", null, null], ["남쪽으로 천천히 내려오며 네온 구경", "아케이드 끝에서 도톤보리 상점가로 자연스럽게 이어집니다. 비 안 맞고 걷기 좋은 구간.", null, null], ["필요하면 다이소·Standard Products", "클리닉 옆 3층 다이소, 난바 파크스의 Standard Products는 시간이 남으면.", null, null]], "sched": [], "info": [["구간", "心斎橋筋商店街 (도톤보리 ~ 長堀)"], ["영업", "11:00–20:00 · 점포별 상이"]], "warns": [], "tips": ["옷·신발 쇼핑은 이번 여행 목적이 아니니 히트텍만 사고 넘어가기."]}, {"n": 8, "time": "18:45–20:30", "stay": "1시간 45분", "name": "호젠지 요코초 · 도톤보리", "jp": "法善寺横丁 / 道頓堀", "cat": "🍺 저녁", "chips": ["타코야키", "이자카야", "생맥주"], "hot": true, "lat": 34.668188, "lng": 135.5027612, "query": "法善寺横丁 大阪", "sum": "타코야키 한 판으로 시작해 호젠지 요코초 골목 이자카야 1~2곳, 마지막은 도톤보리 강변 사진. 1인이라 카운터가 편합니다.", "leg": ["🚶", "도보", "0.6km · 8분"], "steps": [["타코야키 먼저", "도톤보리 상점가의 혼케오타코·와나카. 6~8개 500~700엔. 뜨거우니 골목 들어가기 전에 식히기.", null, null], ["호젠지 요코초 입구", "도톤보리에서 한 블록 안쪽, 폭 1m 남짓 골목. 중간에 물을 뿌리는 <b>미즈카케 후도</b>가 있습니다.", null, null], ["이자카야 1~2곳 — 카운터로", "생맥주 500엔 전후, 안키모·오뎅·철판 요리. 1인은 카운터로 안내받기 쉽습니다.", "一人です", "히토리 데스 · 1인"], ["도톤보리 강변 사진 한 장", "글리코 간판·에비스바시. 비 오면 반사가 오히려 예쁩니다.", null, null]], "sched": [], "info": [["위치", "大阪市中央区道頓堀1丁目 法善寺横丁"], ["시간", "골목 통행 24시간 · 점포 17:00~24:00 전후"]], "warns": ["골목이 좁고 바닥이 젖어 미끄럽습니다. 우산은 접고 들어가기."], "tips": ["비 오면 노점보다 실내 카운터가 많은 안쪽 골목으로."]}, {"n": 9, "time": "20:45–21:30", "stay": "45분", "name": "라이프 센트럴스퀘어 난바", "jp": "ライフ セントラルスクエアなんば店", "cat": "🛒 마트", "chips": ["현지인 마트", "22:00 마감"], "hot": true, "lat": 34.6665993, "lng": 135.4960976, "query": "ライフ セントラルスクエアなんば店", "sum": "현지인이 가는 대형 마트. 생활용품 22:00, 드럭 21:45 마감이라 순서가 중요 — 생활용품 → 드럭 → 식품.", "leg": ["🚶", "도보", "0.9km · 13분"], "steps": [["생활용품 코너 먼저 (22:00 마감)", "도톤보리에서 서쪽으로 0.9km. 도착하면 바로 생활용품 층부터 — 이 코너가 가장 먼저 닫습니다.", null, null], ["드럭 코너 (21:45 마감)", "상비약·화장품. 시간이 촉박하면 이 코너는 생략하고 돈키호테로 넘어가세요.", null, null], ["식품·반찬 (24:00까지)", "내일 아침, 기내 간식, 술안주. 도시락 반값 할인이 21시 이후 시작되기도 합니다.", null, null], ["계산은 컨택리스로", "셀프 계산대에 카드 태그. 봉투는 유료입니다.", null, null]], "sched": [["20:45", "숙소에서 출발", null], ["21:00", "생활용품 코너", null], ["21:30", "돈키호테로", null]], "info": [["주소", "大阪市浪速区湊町1-2-3"], ["전화", "06-6634-0300"], ["영업", "09:00–24:00 (생활용품 22:00 / 드럭 21:45 마감)"]], "warns": ["21:45에 도착하면 생활용품만 겨우입니다. <b>21:00 도착</b>을 목표로 하세요."], "tips": []}, {"n": 10, "time": "21:30–22:30", "stay": "1시간", "name": "돈키호테 도톤보리점", "jp": "ドン・キホーテ 道頓堀店", "cat": "🛒 마무리", "chips": ["24시간", "면세"], "hot": false, "lat": 34.6692979, "lng": 135.5026443, "query": "ドン・キホーテ 道頓堀店 大阪", "sum": "24시간이라 마지막. 마트에서 못 산 것만 빠르게. 면세는 여권과 5,000엔 이상.", "leg": ["🚶", "도보", "1.0km · 14분"], "steps": [["라이프에서 에비스바시 방향 1.0km", "난바 사거리를 지나 도톤보리 쪽으로. 14분.", null, null], ["층별로 빠르게", "1층 식품·과자, 위층 잡화·가전·코스튬. 계산 줄이 길어 층마다 계산대가 나뉘어 있습니다.", null, null], ["면세는 4층 카운터에서", "여권 필수, 세금 10% 환급은 5,000엔 이상. 면세 봉투는 출국 전까지 개봉 금지.", null, null]], "sched": [["21:30", "마트에서 이동", null], ["22:30", "숙소 복귀", "도보 10분"]], "info": [["주소", "大阪市中央区宗右衛門町7-13"], ["전화", "0570-026-511"], ["영업", "24시간"]], "warns": [], "tips": ["숙소까지 도보 10분. 무거운 것만 여기서 사고 나머지는 내일 아침에 정리."]}]}, {"id": "d2", "label": "Day 2", "tab": "Day 2 11/29 일", "date": "11/29 일", "where": "교토 · 우메다", "theme": "교토 오전 · 우메다 노을·일루미네이션 · 스시", "note": "🍂 교토 아침 6~7℃·이슬비 20%. 08:08 열차를 타려면 07:40 숙소 출발, 08:00까지 난바역.", "stops": [{"n": 1, "time": "07:55–08:08", "stay": "13분", "name": "난바역 (요츠바시선)", "jp": "なんば駅 四つ橋線 2番線", "cat": "🚇 출발", "chips": ["08:08발", "240엔", "51분"], "hot": false, "lat": 34.6670979, "lng": 135.5003424, "query": "なんば駅 四つ橋線 大阪", "sum": "숙소 07:40 출발. 요츠바시선 2번 승강장에서 08:08 니시우메다행 — 이 열차를 놓치면 교토가 09:30 도착으로 밀립니다.", "leg": ["🚶", "숙소 → 난바역", "0.9km · 12분"], "steps": [["07:40 숙소 출발", "난바워크 지하상가로 들어가 지하철 개찰까지. 일요일 아침이라 상가 문은 닫혀 있지만 통로는 열려 있습니다.", null, null], ["요츠바시선 2번 승강장", "미도스지선과 다른 노선입니다. 표지판 <b>四つ橋線</b>을 따라 2번 승강장으로.", null, null], ["08:08 西梅田행 탑승", "4개 역, 12분. 니시우메다에서 내려 지상으로 나와 오사카역까지 도보 5~7분.", null, null], ["08:30 오사카역 8번선 JR 신쾌속", "교토행 신쾌속에 타면 29분. 난바 출발부터 교토 도착까지 총 <b>51분 · 820엔</b>.", null, null]], "sched": [["08:08", "なんば → 西梅田 · 四つ橋線 · <b>240엔</b>", "08:20 도착 · 12분"], ["08:30", "大阪駅 8번선 → 京都 · JR新快速 · <b>580엔</b>", "08:59 도착 · 29분"]], "info": [["승강장", "요츠바시선 2번선 (西梅田행)"], ["요금", "지하철 240엔 + JR 580엔 = 820엔"], ["총 소요", "난바 → 교토 51분"]], "warns": ["JR은 <b>컨택리스 카드 터치 불가</b> — ICOCA·스이카나 승차권이 필요합니다. 지하철만 컨택리스 가능."], "tips": ["애플페이 스이카가 안 되면 어제 뽑은 현금으로 승차권을 사면 됩니다."]}, {"n": 2, "time": "08:59–09:10", "stay": "환승 11분", "name": "교토역", "jp": "京都駅", "cat": "🚌 환승", "chips": ["206번 230엔", "五条坂 하차"], "hot": false, "lat": 34.985849, "lng": 135.7587667, "query": "京都駅", "sum": "중앙개찰 → 북쪽 버스터미널. 시내버스 206번으로 五条坂까지 15분·230엔. 택시면 15분.", "leg": ["🚃", "JR 신쾌속", "29분 · 580엔"], "steps": [["개찰 나와 버스터미널(북쪽 출구)", "표지판 <b>Bus</b>를 따라 나가면 정류장이 줄지어 있습니다.", null, null], ["206번 승차", "교토역앞에서 206번은 五条坂·清水寺 방면. 뒤문 승차, 앞문 하차 후 230엔 지불(교통카드 가능).", null, null], ["五条坂 하차 → 언덕 10분", "내려서 완만한 오르막을 따라 올라가면 청수사 인왕문. 우산보다 우비가 편한 구간.", null, null]], "sched": [["08:59", "교토역 도착 · 중앙개찰", null], ["09:05", "206번 승차", null], ["09:20", "五条坂 하차 · 청수사 도착", null]], "info": [["버스", "시내버스 206번 · 230엔 · 약 15분"], ["택시", "약 15분 · 1,500~1,800엔"]], "warns": [], "tips": ["일요일 아침은 버스 정체가 적어 206번이면 충분합니다."]}, {"n": 3, "time": "09:20–10:35", "stay": "1시간 15분", "name": "기요미즈데라 (청수사)", "jp": "清水寺", "cat": "⛩️ 관광", "chips": ["500엔", "06:00–18:00", "단풍"], "hot": true, "lat": 34.9946662, "lng": 135.784661, "query": "清水寺 京都", "sum": "입장 500엔. 인왕문 → 본당 무대 → 오쿠노인 → 오토와 폭포. 오전이라 인파가 적고 사진이 잘 나옵니다.", "leg": ["🚌", "206번 버스", "15분 · 230엔"], "steps": [["인왕문 지나 입장 (500엔)", "매표소에서 성인 500엔. 카드 가능하지만 현금이 빠릅니다.", null, null], ["본당 무대 — 사진 먼저", "무대에서 내려다보는 계곡이 대표 컷. 오전엔 역광이 덜합니다.", null, null], ["오쿠노인 (별도 100엔)", "본당에서 계단을 내려가 반대편. 무대를 마주 보는 각도가 진짜 사진 포인트.", null, null], ["오토와 폭포", "국자로 물을 받아 마시기 — 인당 한 번. 줄이 길면 생략.", null, null]], "sched": [], "info": [["주소", "京都市東山区清水1-294"], ["전화", "075-551-1234"], ["영업", "06:00–18:00 (연중무휴)"], ["요금", "성인 500엔 · 오쿠노인 100엔"]], "warns": ["이슬비 20% — 돌계단이 미끄럽습니다. 우산은 한 손이 묶이니 우비 + 미끄럼 덜한 신발."], "tips": ["10시 넘으면 단체 관광객이 몰립니다. 09:20 입장이 핵심."]}, {"n": 4, "time": "10:45–11:35", "stay": "50분", "name": "산넨자카 · 니넨자카", "jp": "三年坂 / 二年坂", "cat": "⛩️ 산책", "chips": ["무료", "돌계단", "포토스팟"], "hot": false, "lat": 34.9966644, "lng": 135.781008, "query": "三年坂 二年坂 京都", "sum": "청수사에서 내려오는 돌계단 골목. 니넨자카의 3층 목조 건물 맞은편이 야사카탑 포토스팟.", "leg": ["🚶", "도보 (내리막)", "0.5km · 7분"], "steps": [["산넨자카로 내려오기", "청수사 인왕문 앞에서 서쪽으로. 기념품점·사찰이 이어지는 완만한 내리막 계단.", null, null], ["니넨자카 진입", "산넨자카 끝 사거리를 건너면 니넨자카. 포장마차·말차 디저트 가게가 늘어섭니다.", null, null], ["야사카탑 포토스팟", "니넨자카의 3층 목조 건물(스타벅스 니넨자카야) 맞은편 계단에서 탑이 겹쳐 보이는 각도.", null, null]], "sched": [], "info": [["위치", "東山区清水2丁目 · 桝屋町"], ["요금", "무료 · 통행 24시간 (점포 10:00~18:00)"]], "warns": [], "tips": ["젖은 돌계단은 난간 잡고. 사유지 앞 사진은 삼가."]}, {"n": 5, "time": "11:45–13:00", "stay": "1시간 15분", "name": "기온 거리 · 야사카신사", "jp": "八坂神社 / 花見小路", "cat": "⛩️ 관광", "chips": ["무료", "24시간", "하나미코지"], "hot": false, "lat": 35.0036559, "lng": 135.7785534, "query": "八坂神社 京都", "sum": "니넨자카에서 야사카신사로. 본전 참배 후 마루야마공원 쪽으로 나가면 하나미코지 — 게이코·마이코 거리.", "leg": ["🚶", "도보", "1.0km · 14분"], "steps": [["야사카신사 참배 (무료)", "본전 앞에서 두 번 절하고 두 번 박수. 24시간 개방.", null, null], ["마루야마공원 방향으로 나가기", "신사 서쪽 출구 → 공원 → 하나미코지. 이 순서면 역방향 인파를 덜 만납니다.", null, null], ["하나미코지 한 바퀴", "게이코·마이코가 다니는 골목. 사유지 출입·무단 촬영 금지, 큰길로 걷기.", null, null], ["13:00 기온에서 교토역으로", "버스 206번 12분(230엔) 또는 택시 10분. 13:30 라멘에 맞추려면 13:10 출발.", null, null]], "sched": [["11:45", "야사카신사", null], ["12:30", "하나미코지", null], ["13:10", "교토역으로 출발", null]], "info": [["주소", "京都市東山区祇園町北側625"], ["전화", "075-561-6155"], ["요금", "무료 · 24시간"]], "warns": [], "tips": ["기온은 골목이 전부 사유지입니다 — 큰길에서만 사진."]}, {"n": 6, "time": "13:30–14:30", "stay": "점심 1시간", "name": "멘야 키요 교토역앞점", "jp": "麺屋 聖〜kiyo〜 京都駅前店", "cat": "🍜 점심", "chips": ["조개 육수", "예약 불가", "식권기"], "hot": true, "lat": 34.9879123, "lng": 135.7606396, "query": "麺屋 聖 kiyo 京都駅前店", "sum": "교토역 북쪽 요도바시카메라 맞은편, 교토 산도 빌딩 1층. 조개 육수(貝出汁) 라멘. 일요일 11:00–15:30 / 16:30–22:30.", "leg": ["🚌", "206번 버스 (또는 택시)", "12분 · 230엔"], "steps": [["기온에서 교토역으로", "야사카신사 앞 206번 버스로 12분(230엔). 짐이 많거나 시간이 빠듯하면 택시 10분.", null, null], ["교토역 북쪽 출구 → 요도바시카메라 맞은편", "건물 1층, 입구에 조개 표시가 있습니다. 도보 3분.", null, null], ["식권기에서 주문", "입구 자동발권기에서 <b>조개 라멘</b>을 선택하고 현금을 준비. 좌석은 직원 안내.", null, null], ["13:30 넘으면 대기", "줄이 길면 옆 골목 다른 라멘집으로 대체하거나 교토역 에키벤으로. 15:00 열차가 기준입니다.", null, null]], "sched": [["11:00", "영업 시작", null], ["15:30", "점심 영업 종료 (16:30 재개)", null]], "info": [["주소", "京都市下京区東塩小路町736 京都サンドビル1F"], ["전화", "075-746-6360"], ["영업", "일요일 11:00–15:30 / 16:30–22:30"], ["예약", "불가 · 현장 대기"]], "warns": [], "tips": ["주문은 식권기, 물은 셀프. 계산은 식권으로 끝."]}, {"n": 7, "time": "15:00–15:30", "stay": "이동 30분", "name": "교토역 → 오사카역 (JR 신쾌속)", "jp": "京都駅 → 大阪駅", "cat": "🚃 이동", "chips": ["15:00발", "30분", "580엔"], "hot": false, "lat": 34.985849, "lng": 135.7587667, "query": "京都駅", "sum": "노을 시간에 맞춰 45분 앞당긴 복귀. 신쾌속 30분이면 오사카역 — 우메다 공중정원까지 도보·지하보도 10분.", "leg": ["🚃", "JR 신쾌속", "30분 · 580엔"], "steps": [["14:50 교토역 개찰 안으로", "JR 신쾌속은 30번선 전후에서 출발. 표지판 <b>大阪方面</b> 확인.", null, null], ["15:00 신쾌속 탑승", "자유석. 3량이 아니라 12량이라 앉을 자리가 있습니다.", null, null], ["15:30 오사카역 도착", "중앙개찰 → 지하보도로 스카이빌딩 방향. 16:00 39F 매표 목표.", null, null]], "sched": [["15:00", "京都 → 大阪 · JR新快速 · <b>580엔</b>", "15:30 도착 · 30분"], ["15:10", "다음 신쾌속", "15:39 도착"]], "info": [["구간", "京都駅 → 大阪駅 · JR京都線 新快速"], ["요금", "580엔 (컨택리스 불가)"], ["일몰", "16:47 · 골든아워 16:10~17:04"]], "warns": ["15:00을 놓치면 공중정원 입장이 16:20 이후로 밀려 골든아워를 놓칩니다."], "tips": ["오사카역 도착 후 바로 지하보도로 — 1층에서 헤매면 15분이 날아갑니다."]}, {"n": 8, "time": "16:00–17:05", "stay": "1시간 5분", "name": "우메다 공중정원 (스카이빌딩)", "jp": "梅田スカイビル 空中庭園展望台", "cat": "🌇 노을", "chips": ["2,000엔", "39F 매표", "일몰 16:47"], "hot": true, "lat": 34.7054375, "lng": 135.4903279, "query": "梅田スカイビル 空中庭園展望台", "sum": "39F 매표소에서 발권 후 야외 루프탑 360도. 일몰 16:47·골든아워 16:10~17:04라 16시 입장이 정확히 노을 타임.", "leg": ["🚶", "오사카역 → 지하보도", "0.6km · 8분"], "steps": [["오사카역에서 지하보도로 스카이빌딩", "표지판 <b>スカイビル</b>을 따라 지하·연결보도로 약 7~8분.", null, null], ["1F 원더스퀘어 → 3F 전용 엘리베이터", "빌딩 내부 타워 이스트·웨스트 엘리베이터로는 <b>입장 불가</b>. 반드시 외부 전용 입구에서 3F로.", null, null], ["39F 매표소에서 발권", "성인 2,000엔. 웹 사전예매(아소뷰)는 1,800엔 — 이미 16시로 정해졌으니 현장 발권도 무방.", null, null], ["야외 루프탑 360도", "173m. 16:10~17:04가 골든아워, 16:47 일몰. 바람이 강하니 목도리·장갑.", null, null], ["1F 크리스마스 마켓", "원더스퀘어 광장. 글로벤·핫초코 한 잔 하고 나와서 일루미네이션으로.", null, null]], "sched": [["16:00", "39F 매표 · 입장", null], ["16:10", "골든아워 시작", null], ["16:47", "일몰", null], ["17:05", "루프탑 내려오기", null]], "info": [["주소", "大阪市北区大淀中1-1-88 梅田スカイビル"], ["전화", "06-6440-3855"], ["영업", "09:30–22:30 (최종입장 22:00)"], ["요금", "성인 2,000엔 · 웹 1,800엔 · 패스 적용 불가"]], "warns": ["전용 입구는 빌딩 밖에 있습니다. 오피스 엘리베이터로 올라가면 다시 내려와야 합니다."], "tips": ["야외 루프탑은 바람이 강합니다 — 히트텍 위에 한 겹 더.", "삼각대는 반입 제한이 있으니 작은 것이면 통과."]}, {"n": 9, "time": "17:15–18:00", "stay": "45분", "name": "우메다 샴페인 골드 일루미네이션", "jp": "シャンパンゴールドイルミネーション in うめきた", "cat": "✨ 일루미네이션", "chips": ["무료", "17:00–24:00", "51만 구"], "hot": true, "lat": 34.7033829, "lng": 135.4945001, "query": "うめきた広場 グランフロント大阪", "sum": "공중정원에서 오사카역으로 걸어 내려오는 길목 그대로. 그랑 그린 오사카 ~ 그랑 프론트 오사카 우메키타 광장이 51만 구 샴페인 골드로 물듭니다.", "leg": ["🚶", "도보 (내려오는 길목)", "0.6km · 8분"], "steps": [["스카이빌딩에서 우메키타 광장으로", "오사카역 방향으로 걸어 내려오면 바로 일루미네이션 구간. 별도 입장권 없음.", null, null], ["우메키타 광장 · 케야키 거리", "약 51만 구 LED. 2026-11-04~2027-02-28, 매일 <b>17:00~24:00</b> 무료 점등.", null, null], ["그랑 프론트 쪽으로 천천히", "광장 → 그랑 프론트 → 그랑 그린 오사카 방향으로 이어집니다. 사진은 광장 중앙에서.", null, null], ["18:00 오사카역/우메다역으로", "미도스지선 우메다역에서 난바까지 8분·240엔. 18:10 스시에 맞춥니다.", null, null]], "sched": [["17:15", "우메키타 광장 도착", null], ["17:00–24:00", "점등 시간 (매일)", null], ["18:00", "우메다역으로", null]], "info": [["위치", "うめきた広場周辺 · けやき並木 · いちょう並木"], ["기간", "2026-11-04 ~ 2027-02-28"], ["점등", "매일 17:00–24:00 · 무료"], ["규모", "약 51만 구 · 샴페인 골드"]], "warns": ["일요일 저녁은 광장이 붐빕니다 — 가방 앞으로, 사진은 광장 가장자리에서."], "tips": ["그랑 프론트 1F 크리스마스 마켓과 이어서 보면 한 번에 끝납니다."]}, {"n": 10, "time": "18:10–19:30", "stay": "1시간 20분", "name": "간코 스시 도톤보리 본점", "jp": "がんこ寿司 道頓堀本店", "cat": "🍣 저녁", "chips": ["12:00–22:30", "도톤보리"], "hot": true, "lat": 34.6686797, "lng": 135.5019553, "query": "がんこ寿司 道頓堀本店", "sum": "우메다에서 미도스지선으로 난바 복귀 8분. 도톤보리 본점은 22:30까지, 일요일 저녁은 20~30분 대기 각오.", "leg": ["🚇", "미도스지선 + 도보", "8분 · 240엔"], "steps": [["우메다 → 난바 (미도스지선 8분)", "난바역 14번 출구로 나오면 도톤보리까지 도보 5분.", null, null], ["입구에서 이름 적고 대기", "웨이팅 보드에 이름·인원을 적습니다. 기다리는 동안 간판 구경.", null, null], ["세트보다 단품 조합", "모둠 스시 3,000~5,000엔. 회전초밥보다 비싸지만 재료가 다릅니다. 생맥주 한 잔 곁들이기.", null, null], ["22:30 라스트오더 주의", "20:30 넘어 입장하면 마지막 주문이 촉박합니다.", null, null]], "sched": [["18:10", "입장 · 대기", null], ["19:30", "식사 마무리", null]], "info": [["주소", "大阪市中央区道頓堀1-8-24"], ["영업", "12:00–22:30"], ["평점", "4.7 (리뷰 3,200+)"]], "warns": [], "tips": ["난바 본점(3-1-15)과 다른 지점입니다 — 도톤보리 강변 쪽으로."]}, {"n": 11, "time": "19:45–", "stay": "자유", "name": "우라난바 이자카야 (생맥주 2차)", "jp": "裏なんば (難波千日前)", "cat": "🍺 마무리", "chips": ["도보 10분", "1인 OK"], "hot": false, "lat": 34.6643472, "lng": 135.503791, "query": "裏なんば 難波千日前 大阪", "sum": "난바역 남쪽 센니치마에 골목. 2층 작은 이자카야가 많고 1인 손님 비중이 높아 부담 없습니다.", "leg": ["🚶", "도보", "0.7km · 10분"], "steps": [["간코에서 남쪽으로 0.7km", "센니치마에 상점가를 따라 10분. 골목 입구 간판이 작으니 지도로 확인.", null, null], ["1층 카운터부터", "2층 가게는 계단이 좁으니 1층 카운터가 편합니다. 생맥주 + 철판 요리 한 접시.", "一人です", "히토리 데스 · 1인"], ["숙소까지 도보 10분", "술은 한 잔으로 끊고 내일 08:30 체크아웃에 대비.", null, null]], "sched": [], "info": [["위치", "大阪市中央区難波千日前 일대 (裏なんば)"]], "warns": [], "tips": ["일요일 밤은 23시 이후 닫는 곳이 많습니다."]}]}, {"id": "d3", "label": "Day 3", "tab": "Day 3 11/30 월", "date": "11/30 월", "where": "오사카 → 인천", "theme": "체크아웃 · 마운자로 반입 · 귀국", "note": "☀️ 맑음 0% · 4~15℃. 약 본체는 기내 가방, 큰 아이스팩은 위탁 수하물.", "stops": [{"n": 1, "time": "08:00–08:30", "stay": "30분", "name": "베셀 인 난바 (체크아웃)", "jp": "ベッセルインなんば", "cat": "🧊 포장", "chips": ["08:30 체크아웃", "냉장고 확인", "보냉팩"], "hot": true, "lat": 34.6686548, "lng": 135.4995612, "query": "ベッセルインなんば 大阪", "sum": "냉장고에서 약 12펜을 전부 꺼내 보냉백에. 큰 아이스팩은 캐리어로, 약 본체는 기내 가방으로 분리.", "leg": null, "steps": [["냉장고 안쪽 칸에서 약 전부 꺼내기", "문 선반에 둔 것이 없는지까지 확인하고 <b>12펜</b>인지 셉니다.", null, null], ["보냉백에 약 + 작은 아이스팩", "약 본체는 <b>기내 가방</b>에. 위탁으로 보내면 노출·분실 위험이 큽니다.", null, null], ["큰 아이스팩은 위탁 캐리어로", "액체류 100ml 제한은 기내 수하물에만 적용 — 큰 아이스팩은 위탁이 정답.", null, null], ["08:20 편의점 조식 · 08:30 체크아웃", "프런트에 키를 반납하고 영수증 확인. 조식·택스 포함 여부 체크.", null, null]], "sched": [["07:40", "기상 · 약 포장", null], ["08:20", "조식 (편의점)", null], ["08:30", "체크아웃", null]], "info": [["주소", "大阪市中央区道頓堀2-2-18"], ["전화", "06-6211-7071"], ["예약", "아고다 · 예약번호는 앱에서 확인"]], "warns": ["냉동 금지 · 직사광선 금지. 냉장고에 약을 남기고 나오는 게 가장 흔한 실수입니다."], "tips": []}, {"n": 2, "time": "08:38–08:48", "stay": "10분", "name": "난카이 난바역", "jp": "なんば駅 (南海) 6番線", "cat": "🚃 이동", "chips": ["08:48발", "970엔", "45분"], "hot": false, "lat": 34.6629331, "lng": 135.5022953, "query": "南海なんば駅 大阪", "sum": "난바워크 지하로 난카이 3층. 08:48 공항급행이 실측 기준 최적편 — 09:40 공항 도착.", "leg": ["🚶", "난바워크 경유", "0.9km · 12분 (짐 있으면 15분)"], "steps": [["체크아웃 후 난바워크로", "지하상가를 따라 난카이 난바 방면. 캐리어 끌고 15분 잡기.", null, null], ["3층 6번선 개찰", "공항급행은 6번선. 컨택리스 카드 태그.", null, null], ["08:48 탑승 — 종점 간사이공항", "자유석. 캐리어는 문 옆 공간에.", null, null]], "sched": [["08:38", "숙소 출발 (도보)", null], ["08:48", "なんば → 関西空港 · 空港急行 · <b>970엔</b>", "09:40 도착 · 45분"]], "info": [["승강장", "난카이 3층 6번선"], ["요금", "970엔 (컨택리스 가능)"]], "warns": ["놓치면 다음 급행은 약 15분 후 — 09:55 전후 도착. 11:15 출발엔 충분하지만 여유가 줄어듭니다."], "tips": []}, {"n": 3, "time": "09:40–11:15", "stay": "1시간 35분", "name": "간사이 국제공항 T1 (TW302)", "jp": "関西国際空港 第1ターミナル", "cat": "✈️ 출국", "chips": ["TW302 11:15", "보안·면세", "세관"], "hot": false, "lat": 34.4348282, "lng": 135.2446195, "query": "関西国際空港 第1ターミナル", "sum": "4층 국제선 카운터에서 체크인·수하물. 출국심사 후 면세점 30분, 11:15 TW302 탑승 → 13:25 인천.", "leg": ["🚃", "난카이 공항급행", "45분 · 970엔"], "steps": [["4층 국제선 출발 로비 · 티웨이 카운터", "예약번호는 모두투어 예약 확인서·톡에서 확인. 수하물 위탁할 때 큰 아이스팩을 넣은 캐리어를 보냅니다.", null, null], ["기내 가방은 그대로", "마운자로 12펜 + 영문 처방전·영수증. 보안검색대에서 열어 보여줄 수 있게 위쪽에.", null, null], ["출국심사 · 보안검색", "액체류 100ml 제한은 기내만. 아이스팩을 위탁한 이유입니다.", null, null], ["면세점 30분", "출국심사 후 구역. 09:40 도착이면 여유 1시간.", null, null], ["11:15 TW302 탑승 → 13:25 인천", "입국 시 세관 신고서에 자가치료용 의약품 3개월분(12펜) 기재, 영문 처방전·영수증 제시.", null, null]], "sched": [["09:40", "간사이공항역 도착", null], ["10:00", "체크인 · 수하물 위탁", null], ["11:15", "TW302 출발 → 13:25 인천 T1", null]], "info": [["카운터", "4층 국제선 출발 로비 (티웨이항공)"], ["항공", "TW302 11:15 간사이 T1 → 13:25 인천 T1"], ["반입", "자가치료용 3개월분(12펜) · 영문 처방전·영수증"]], "warns": ["단기간 반복 반입은 통관 보류 사유입니다. 이번 3개월분을 한 번에 정리하고, 다음 원정은 최소 몇 달 뒤로."], "tips": ["약 봉투는 기내 가방 안에서도 눌리지 않는 위치에."]}]}], "check": [{"group": "출발 전 · 한국에서", "items": [{"t": "여권 유효기간 6개월 이상 확인", "n": ""}, {"t": "티웨이항공 온라인 체크인 · 좌석 지정", "n": "출발 24시간 전부터"}, {"t": "위탁 수하물 포함 여부 확인", "n": "모두투어 예약 확인서"}, {"t": "숙소 바우처 오프라인 저장", "n": "아고다 앱"}, {"t": "클리닉 예약 확인서 저장", "n": "11/28(토) 13:00"}, {"t": "클리닉 사전 문진표 작성", "n": ""}, {"t": "비짓재팬웹 QR 캡처 · 저장", "n": "입국심사에서 제시"}, {"t": "엔화 소액 현금 + 컨택리스 카드 점검", "n": "ATM에서 1~2만 엔"}, {"t": "eSIM 또는 로밍 준비", "n": ""}, {"t": "보냉백 · 아이스팩 준비", "n": "귀국 때 마운자로 포장용"}, {"t": "우산 · 우비 · 젖어도 되는 신발", "n": "11/28 비 97%"}, {"t": "보조배터리 · 충전기", "n": "보조배터리는 기내만"}, {"t": "상비약 · 마스크", "n": ""}]}, {"group": "현지에서", "items": [{"t": "10:17 또는 10:32 공항급행 탑승 (970엔)", "n": ""}, {"t": "베셀 인 난바에 짐 보관", "n": "체크인 전"}, {"t": "12:40 클리닉 도착 · 문진표 제출", "n": "여권 지참"}, {"t": "13:00 진료 → 마운자로 3개월분 수령", "n": "12펜 확인"}, {"t": "영문 처방증명서 필요 여부 확인 · 요청", "n": "별도 요금"}, {"t": "15:05 체크인 → 냉장고 안쪽 칸 보관", "n": "냉동 금지"}, {"t": "캐릭터샵 20:00 마감 전 파르코·다이마루", "n": ""}, {"t": "라이프 생활용품 22:00 전에", "n": "드럭은 21:45"}, {"t": "일요일 08:08 난바 출발", "n": "07:40 숙소 출발"}, {"t": "08:30 체크아웃 전 냉장고 확인", "n": "약 12펜 세기"}, {"t": "약 본체 기내 · 큰 아이스팩 위탁 · 세관 신고서·영문 처방전 소지", "n": ""}]}], "reserve": [{"icon": "✈️", "title": "항공 · 티웨이항공", "rows": [{"k": "가는편", "v": "11/28(토) <b>TW301</b> 07:55 인천 T1 → 09:55 간사이 T1"}, {"k": "오는편", "v": "11/30(월) <b>TW302</b> 11:15 간사이 T1 → 13:25 인천 T1"}, {"k": "예약번호", "v": "모두투어 예약 확인서 · 톡에서 확인"}]}, {"icon": "🏨", "title": "숙소 · 베셀 인 난바", "rows": [{"k": "주소", "v": "大阪市中央区道頓堀2-2-18 · 난바역 도보 3분"}, {"k": "체크인", "v": "<b>11/28 15:05</b> (정식 14:00 · 도착 즉시 짐 보관)"}, {"k": "체크아웃", "v": "<b>11/30 08:30</b> (정식 11:00)"}, {"k": "예약번호", "v": "아고다 앱 예약 내역에서 확인"}]}, {"icon": "💉", "title": "클리닉 · 슬림클리닉 신사이바시점", "rows": [{"k": "병원", "v": "AND美容外科 心斎橋院 · ケーズビル心斎橋 10F"}, {"k": "일시", "v": "11/28(토) <b>13:00</b> · 토요일 09:00–20:00"}, {"k": "처방", "v": "마운자로 2.5mg 1개월 + 5mg 2개월 (12펜)"}, {"k": "예약번호", "v": "예약 확인서 · 톡에서 확인"}]}], "weather": [{"date": "11/28", "where": "토 · 오사카", "icon": "🌧️", "temp": "<b>9~18℃ · 비 97%</b>", "note": "낮 이슬비 73%. 큰 우산 · 젖어도 되는 신발."}, {"date": "11/29", "where": "일 · 교토", "icon": "🌦️", "temp": "<b>6~11℃ · 이슬비 48%</b>", "note": "아침 7℃. 패딩 · 목도리 · 히트텍."}, {"date": "11/29", "where": "일 · 우메다", "icon": "🌤️", "temp": "<b>6~12℃ · 낮 구름 조금 22%</b>", "note": "일몰 16:47 · 루프탑 바람 강함."}, {"date": "11/30", "where": "월 · 오사카", "icon": "☀️", "temp": "<b>4~15℃ · 맑음 0%</b>", "note": "새벽 4℃. 체크아웃 동선 짧게."}], "tips": [{"k": "결제", "v": "난카이·오사카 메트로는 컨택리스 카드 터치 가능. <b>JR은 불가</b>(ICOCA·스이카·승차권)."}, {"k": "현금", "v": "애플페이 스이카 충전이 안 되는 카드라 공항 ATM에서 1~2만 엔은 필수."}, {"k": "마운자로", "v": "자가치료용 3개월분(12펜)까지 휴대 반입. 본체는 기내, 큰 아이스팩은 위탁."}, {"k": "보관", "v": "냉장 2~8℃, 냉동 금지. 호텔 개인 냉장고 안쪽 칸."}, {"k": "세관", "v": "영문 처방전·영수증 지참. 단기간 반복 반입은 보류 사유."}, {"k": "교토 버스", "v": "시내버스 1회 230엔, 뒤문 승차·앞문 하차."}]};
+
+/* ---------- storage ---------- */
+const SKEY = 'osa2611.v1';
+const store = (() => {
+  try { return JSON.parse(localStorage.getItem(SKEY)) || {}; } catch (e) { return {}; }
+})();
+if (!store.checks) store.checks = {};
+function save() {
+  try { localStorage.setItem(SKEY, JSON.stringify(store)); } catch (e) {}
+}
+
+/* ---------- helpers ---------- */
+const $ = s => document.querySelector(s);
+const el = (h) => { const d = document.createElement('div'); d.innerHTML = h.trim(); return d.firstElementChild; };
+const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const gmView = s => `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent((s.query||s.name)+' '+(s.lat+','+s.lng))}`;
+const gmDir = s => `https://www.google.com/maps/dir/?api=1&destination=${s.lat},${s.lng}&travelmode=transit`;
+
+let toastT;
+function toast(msg) {
+  const t = $('#toast'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 1800);
+}
+
+/* ---------- map ---------- */
+const map = L.map('map', { zoomControl: false, attributionControl: false, preferCanvas: true, worldCopyJump: true })
+  .setView([34.68, 135.50], 12);
+
+const TILE_A = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+const TILE_B = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}';
+let tiles = null, tileErr = 0, fallback = false;
+function useTiles(url, label) {
+  if (label) { const c = $('#osmcredit'); if (c) c.innerHTML = label; }
+  if (tiles) map.removeLayer(tiles);
+  tiles = L.tileLayer(url, { maxZoom: 19, minZoom: 3, crossOrigin: true }).addTo(map);
+  tiles.on('tileerror', () => {
+    tileErr++;
+    if (!fallback && tileErr >= 5) {
+      fallback = true; tileErr = 0;
+      useTiles(TILE_B, '&copy; Esri, HERE, Garmin, &copy; OpenStreetMap');
+      toast('지도 타일을 대체 지도로 전환했습니다');
+    }
+  });
+  tiles.on('tileload', () => { tileErr = 0; });
+}
+useTiles(TILE_A, '&copy; OpenStreetMap');
+
+const layer = L.layerGroup().addTo(map);
+
+/* pin icon */
+function pinIcon(stop, active) {
+  const cls = 'pin' + (stop.hot ? ' hot' : '') + (active ? ' active' : '');
+  return L.divIcon({
+    className: '',
+    html: `<div class="${cls}"><span class="pin-num">${stop.n}</span>${stop.hot ? '<i class="pin-hot-dot"></i>' : ''}</div>`,
+    iconSize: [30, 30], iconAnchor: [15, 15], popupAnchor: [0, -16]
+  });
+}
+
+let state = { day: 'd1', sel: null };
+
+function stopsOf(id) { const d = D.days.find(x => x.id === id); return d ? d.stops : []; }
+function dayOf(id) { return D.days.find(x => x.id === id); }
+
+/* ---------- clustering ---------- */
+let pins = [];            // [{stop, lat, lng}]
+const pinLayer = L.layerGroup().addTo(map);
+const CLUSTER_PX = 24;
+
+function makePins(stops) {
+  return stops.map(s => ({ stop: s, lat: s.lat, lng: s.lng }));
+}
+
+function clusterPins() {
+  const z = map.getZoom();
+  const groups = [];
+  pins.forEach(p => {
+    const pt = map.project([p.lat, p.lng], z);
+    let g = groups.find(g2 => g2.pts.every(q => q.distanceTo(pt) < CLUSTER_PX));
+    if (!g) { g = { pts: [], members: [] }; groups.push(g); }
+    g.pts.push(pt); g.members.push(p);
+  });
+  return groups;
+}
+
+function refreshPins() {
+  pinLayer.clearLayers();
+  const zoom = map.getZoom();
+  clusterPins().forEach(g => {
+    if (g.members.length === 1) {
+      const p = g.members[0];
+      const m = L.marker([p.lat, p.lng], { icon: pinIcon(p.stop, state.sel === p.stop.n), keyboard: false });
+      m.on('click', () => openStop(p.stop.n, { fly: true }));
+      m.addTo(pinLayer);
+    } else {
+      const c = g.pts.reduce((a, q) => a.add(q), L.point(0, 0)).divideBy(g.pts.length);
+      const ll = map.unproject(c, zoom);
+      const hasSel = g.members.some(p => p.stop.n === state.sel);
+      const nums = g.members.map(p => p.stop.n);
+      const label = nums.length <= 3 ? nums.join('·') : nums.length + '곳';
+      const html = `<div class="cly${hasSel ? ' sel' : ''}">${label}</div>`;
+      const icon = L.divIcon({ className: '', html, iconSize: [42, 30], iconAnchor: [21, 15] });
+      const m = L.marker(ll, { icon, keyboard: false, zIndexOffset: 500 });
+      m.on('click', () => {
+        const b = L.latLngBounds(g.members.map(p => [p.lat, p.lng]));
+        const same = b.getNorthEast().equals(b.getSouthWest());
+        if (!same) { map.flyToBounds(b, { padding: [70, 70], maxZoom: 17, duration: .7 }); return; }
+        const pop = L.popup({ closeButton: false, offset: [0, -8], className: 'cp' })
+          .setLatLng(ll)
+          .setContent('<div class="cpl">' + g.members.map(p => `<button data-n="${p.stop.n}"><b>${p.stop.n}</b> ${esc(p.stop.name)}</button>`).join('') + '</div>');
+        pop.openOn(map);
+        setTimeout(() => {
+          document.querySelectorAll('.cpl button').forEach(btn => btn.addEventListener('click', () => {
+            map.closePopup();
+            openStop(+btn.dataset.n, { fly: true });
+          }));
+        }, 60);
+      });
+      m.addTo(pinLayer);
+    }
+  });
+}
+
+function drawDay(id) {
+  layer.clearLayers();
+  pins = makePins(stopsOf(id));
+  const path = pins.map(p => [p.lat, p.lng]);
+  if (path.length > 1) {
+    L.polyline(path, { color: '#6C4CF1', weight: 3, opacity: .9, dashArray: '1 9', lineCap: 'round' }).addTo(layer);
+    L.polyline(path, { color: '#fff', weight: 6, opacity: .5 }).addTo(layer).bringToBack();
+  }
+  refreshPins();
+}
+
+function markerPos(n) {
+  const p = pins.find(x => x.stop.n === n);
+  return p ? { lat: p.lat, lng: p.lng } : null;
+}
+
+function coverPx() {
+  const tabH = $('#tabs').offsetHeight;
+  const sheet = $('#detail').classList.contains('open') ? $('#detail').offsetHeight : $('#panel').offsetHeight;
+  return sheet + tabH;
+}
+
+function fitDay(animate = true) {
+  const ps = pins.map(p => [p.lat, p.lng]);
+  if (!ps.length) return;
+  const b = L.latLngBounds(ps);
+  const pad = coverPx() + 26;
+  const opt = { paddingTopLeft: [34, 74], paddingBottomRight: [34, pad], animate, maxZoom: 16 };
+  if (ps.length === 1) map.setView(ps[0], 16, { animate });
+  else map.fitBounds(b, opt);
+}
+
+function km(a, b) {
+  const R = 6371, dLat = (b.lat - a.lat) * Math.PI / 180, dLng = (b.lng - a.lng) * Math.PI / 180;
+  const la1 = a.lat * Math.PI / 180, la2 = b.lat * Math.PI / 180;
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(la1) * Math.cos(la2) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(h));
+}
+
+/* default day view: the day's densest walking core */
+function focusDay(animate = true) {
+  if (!pins.length) return;
+  if (pins.length <= 3) { fitDay(animate); return; }
+  if (pins.length === 1) { map.setView([pins[0].lat, pins[0].lng], 15, { animate }); return; }
+  let best = null;
+  pins.forEach(a => {
+    const grp = pins.filter(b => km(a, b) <= 2.2);
+    if (!best || grp.length > best.length) best = grp;
+  });
+  const b = L.latLngBounds(best.map(p => [p.lat, p.lng]));
+  map.fitBounds(b, { paddingTopLeft: [40, 62], paddingBottomRight: [40, Math.round(coverPx()) + 8], maxZoom: 15.7, animate });
+}
+
+function flyToStop(stop, zoom) {
+  const pt = markerPos(stop.n) || stop;
+  const z = Math.max(map.getZoom(), zoom || 16);
+  const off = Math.round(coverPx() / 2);
+  const target = map.unproject(map.project([pt.lat, pt.lng], z).add([0, off]), z);
+  map.flyTo(target, z, { duration: .85 });
+}
+
+/* ---------- now / today ---------- */
+const TRIP_DAYS = { '2026-11-28': 'd1', '2026-11-29': 'd2', '2026-11-30': 'd3' };
+function pad2(n) { return (n < 10 ? '0' : '') + n; }
+function todayKey(d) { d = d || new Date(); return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()); }
+function mins(t) {
+  const m = String(t).match(/^(\d{1,2}):(\d{2})/);
+  return m ? (+m[1]) * 60 + (+m[2]) : null;
+}
+function nowStop(day) {
+  const key = todayKey();
+  if (TRIP_DAYS[key] !== day.id) return null;
+  const d = new Date(), cur = d.getHours() * 60 + d.getMinutes();
+  let next = null;
+  for (const s of day.stops) {
+    const st = mins(s.time);
+    const em = String(s.time).split('–')[1];
+    const en = em ? mins(em) : st + 60;
+    if (st === null) continue;
+    if (cur >= st && cur <= en + 30) return s.n;
+    if (st > cur && next === null) next = s.n;
+  }
+  return next;
+}
+
+/* ---------- panel / day list ---------- */
+function renderDay(id) {
+  const day = dayOf(id);
+  state.day = id;
+  $('#pH2').textContent = day.label;
+  $('#pSub').textContent = day.date + ' · ' + day.where;
+  const note = $('#pNote');
+  note.textContent = day.note;
+  note.classList.remove('hidden');
+
+  // weather chips of that date
+  const wx = $('#wx');
+  const key = day.date.split(' ')[0];
+  const rows = D.weather.filter(w => w.date === key);
+  wx.innerHTML = rows.map(w => `<div class="wxc"><span class="ic">${w.icon}</span><span>${esc(w.where)}</span>${w.temp}</div>`).join('');
+  wx.classList.toggle('hidden', rows.length === 0);
+
+  const nowN = nowStop(day);
+  const sc = $('#scroll');
+  sc.innerHTML = `<div class="daysum"><span>📍 ${day.stops.length}곳 · ${esc(day.theme)}</span><button class="fitlink" id="fitlink">⤢ 전체 경로</button></div>` +
+    day.stops.map(s => `
+      <div class="card ${s.hot ? 'hot' : ''} ${nowN === s.n ? 'now' : ''}" data-n="${s.n}">
+        ${nowN === s.n ? '<span class="nowtag">지금 여기</span>' : ''}
+        <div class="cnum">${s.n}</div>
+        <div class="cbody">
+          <div class="ctime">${esc(s.time)}<span class="stay">${esc(s.stay || '')}</span></div>
+          <div class="cname">${esc(s.name)}</div>
+          <div class="csum">${esc(s.sum)}</div>
+          <div class="cchips">${(s.chips || []).map(c => `<span class="chip">${esc(c)}</span>`).join('')}</div>
+        </div>
+      </div>`).join('');
+  sc.scrollTop = 0;
+
+  $('#pillDay').textContent = day.label;
+  $('#pillWhere').textContent = day.where;
+  $('#pillDate').textContent = day.date;
+
+  drawDay(id);
+  setTimeout(() => { focusDay(false); refreshPins(); }, 60);
+}
+
+/* ---------- detail sheet ---------- */
+function renderDetail(s) {
+  const stepHtml = (s.steps || []).map(([title, body, jp, jpr]) => `
+    <li>
+      <div class="st">${title}</div>
+      <div class="sb">${body}</div>
+      ${jp ? `<div class="jp"><div class="jpt">${jp}</div>${jpr ? `<div class="jpr">${jpr}</div>` : ''}
+              <button data-copy="${esc(jp)}">복사</button></div>` : ''}
+    </li>`).join('');
+
+  const schedHtml = (s.sched && s.sched.length) ? `
+    <div class="sect"><h4>시간표 · 배차</h4>
+      <div class="dsch">${s.sched.map(([tm, tx, nb]) => `
+        <div class="r"><div class="tm">${tm}</div><div class="tx">${tx}</div>${nb ? `<div class="nb">${nb}</div>` : ''}</div>`).join('')}
+      </div></div>` : '';
+
+  const infoHtml = `
+    <div class="sect"><h4>세부 정보</h4>
+      <div class="dinfo">${(s.info || []).map(([k, v]) => `<div class="r"><div class="k">${k}</div><div class="v">${v}</div></div>`).join('')}</div>
+      <div class="mbtn">
+        <a class="m1" href="${gmDir(s)}" target="_blank" rel="noopener">길찾기</a>
+        <a class="m2" href="${gmView(s)}" target="_blank" rel="noopener">구글맵에서 보기</a>
+      </div>
+    </div>`;
+
+  const warnHtml = (s.warns && s.warns.length) ? `<div class="sect"><h4>주의</h4>${s.warns.map(w => `<div class="warn"><span class="ic">⚠️</span><span>${w}</span></div>`).join('')}</div>` : '';
+  const tipHtml = (s.tips && s.tips.length) ? `<div class="sect"><h4>팁</h4>${s.tips.map(t => `<div class="tip"><span class="ic">💡</span><span>${t}</span></div>`).join('')}</div>` : '';
+
+  return `
+    <div class="dhead">
+      <div class="dnum ${s.hot ? 'hot' : ''}">${s.n}</div>
+      <div class="hx">
+        <div class="dtime">${esc(s.time)}<span class="stay"> · ${esc(s.stay || '')}</span></div>
+        <h3>${esc(s.name)}</h3>
+        <div class="djp">${esc(s.jp || '')}</div>
+        <div class="dcat">${esc(s.cat || '')}</div>
+      </div>
+      <button class="dclose" id="dclose" aria-label="닫기">✕</button>
+    </div>
+    ${s.leg ? `<div class="dleg"><span>${s.leg[0]}</span><b>${esc(s.leg[1])}</b><span>${esc(s.leg[2])}</span></div>` : ''}
+    <p class="dsum">${esc(s.sum)}</p>
+    <div class="sect"><h4>여기서 할 일</h4><ol class="steps">${stepHtml}</ol></div>
+    ${schedHtml}${infoHtml}${warnHtml}${tipHtml}
+  `;
+}
+
+function openStop(n, opt) {
+  const day = dayOf(state.day);
+  const s = day.stops.find(x => x.n === n);
+  if (!s) return;
+  state.sel = n;
+  $('#dbody').innerHTML = renderDetail(s);
+  $('#dbody').scrollTop = 0;
+  const d = $('#detail');
+  d.classList.add('open');
+  d.setAttribute('aria-hidden', 'false');
+  markActive();
+  $('#scroll').querySelectorAll('.card').forEach(c => c.classList.toggle('sel', +c.dataset.n === n));
+  if (!opt || opt.fly !== false) setTimeout(() => flyToStop(s, opt && opt.zoom), 40);
+  $('#dbody').querySelector('#dclose').addEventListener('click', closeDetail);
+  $('#dbody').querySelectorAll('[data-copy]').forEach(b => {
+    b.addEventListener('click', async () => {
+      const txt = b.getAttribute('data-copy');
+      try { await navigator.clipboard.writeText(txt); }
+      catch (e) {
+        const ta = document.createElement('textarea'); ta.value = txt; document.body.appendChild(ta);
+        ta.select(); try { document.execCommand('copy'); } catch (_) {} document.body.removeChild(ta);
+      }
+      b.textContent = '복사됨'; setTimeout(() => { b.textContent = '복사'; }, 1400);
+      toast('일본어 문구를 복사했습니다');
+    });
+  });
+}
+
+function closeDetail() {
+  $('#detail').classList.remove('open');
+  $('#detail').setAttribute('aria-hidden', 'true');
+  state.sel = null;
+  markActive();
+  $('#scroll').querySelectorAll('.card').forEach(c => c.classList.remove('sel'));
+}
+
+function markActive() { refreshPins(); }
+
+/* swipe down to close */
+(function () {
+  const d = $('#detail'), grab = $('#dgrab');
+  let y0 = null, dy = 0;
+  const start = e => { y0 = (e.touches ? e.touches[0].clientY : e.clientY); dy = 0; d.style.transition = 'none'; };
+  const move = e => {
+    if (y0 === null) return;
+    const y = (e.touches ? e.touches[0].clientY : e.clientY);
+    const bodyTop = $('#dbody').scrollTop <= 0;
+    if (!bodyTop && e.target.closest && !e.target.closest('.dgrab')) return;
+    dy = Math.max(0, y - y0);
+    if (dy > 0) { d.style.transform = `translateY(${dy}px)`; if (e.cancelable) e.preventDefault(); }
+  };
+  const end = () => {
+    if (y0 === null) return;
+    d.style.transition = '';
+    d.style.transform = '';
+    if (dy > 90) closeDetail();
+    y0 = null;
+  };
+  grab.addEventListener('touchstart', start, { passive: true });
+  grab.addEventListener('touchmove', move, { passive: false });
+  grab.addEventListener('touchend', end);
+  grab.addEventListener('touchcancel', end);
+  d.addEventListener('touchstart', e => { if ($('#dbody').scrollTop <= 0 || e.target.closest('.dgrab')) start(e); }, { passive: true });
+  d.addEventListener('touchmove', move, { passive: false });
+  d.addEventListener('touchend', end);
+})();
+
+/* ---------- checklist ---------- */
+function renderCheck() {
+  $('#pH2').textContent = '체크리스트';
+  $('#pSub').textContent = '24항목 · 자동 저장';
+  $('#pNote').classList.add('hidden');
+  $('#wx').classList.add('hidden');
+  $('#pillDay').textContent = '체크리스트';
+  $('#pillWhere').textContent = '24항목';
+  $('#pillDate').textContent = '자동 저장';
+
+  let idx = 0;
+  const groups = D.check.map(g => `
+    <div class="gtitle">${esc(g.group)}</div>
+    ${g.items.map(it => {
+      idx++;
+      const id = 'c' + idx;
+      return `<label class="ci"><input type="checkbox" id="${id}" ${store.checks[id] ? 'checked' : ''}>
+        <div class="ci-box"><div class="ci-t">${esc(it.t)}</div>${it.n ? `<div class="ci-n">${esc(it.n)}</div>` : ''}</div></label>`;
+    }).join('')}`).join('');
+
+  const reserve = `
+    <div class="gtitle">예약 정보 <span style="font-weight:600;color:#B0ADC4">· 예약번호는 캘린더·톡에서 확인</span></div>
+    ${D.reserve.map(r => `
+      <div class="rv">
+        <div class="rh">${r.icon} ${esc(r.title)}</div>
+        ${r.rows.map(x => `<div class="rr"><div class="k">${x.k}</div><div class="v">${x.v}</div></div>`).join('')}
+      </div>`).join('')}`;
+
+  const tips = `
+    <div class="gtitle">여행 팁</div>
+    <div class="rv tips">${D.tips.map(t => `<div class="rr"><div class="k">${t.k}</div><div>${t.v}</div></div>`).join('')}</div>`;
+
+  $('#scroll').innerHTML = `
+    <div class="cprog">
+      <div><div class="pn" id="pn">0/24</div><div class="pl">완료</div></div>
+      <div class="bar"><i id="pbar" style="width:0%"></i></div>
+    </div>
+    ${groups}
+    <div class="memo">
+      <div class="mh"><b>개인 메모</b><span id="msaved">저장됨</span></div>
+      <textarea id="memo" placeholder="현지에서 적을 것 — 산 것, 먹은 것, 다음에 올 곳…">${esc(store.memo || '')}</textarea>
+    </div>
+    ${reserve}
+    ${tips}
+    <button class="reset" id="reset">체크·메모 초기화</button>
+    <div class="credit">지도 © OpenStreetMap contributors &nbsp;|&nbsp; <a href="https://developer.apple.com/weatherkit/data-source-attribution/" target="_blank" rel="noopener">&#xF8FF; Weather</a></div>
+  `;
+  const total = D.check.reduce((a, g) => a + g.items.length, 0);
+  const upd = () => {
+    const n = Object.keys(store.checks).filter(k => store.checks[k]).length;
+    const capped = Math.min(n, total);
+    $('#pn').textContent = capped + '/' + total;
+    $('#pbar').style.width = Math.round(capped / total * 100) + '%';
+    const tab = document.querySelector('#tabs button[data-day="check"]');
+    if (tab) {
+      const left = total - capped;
+      tab.querySelector('.dot')?.remove();
+      if (left > 0) {
+        const d = document.createElement('span'); d.className = 'dot'; d.textContent = left;
+        tab.appendChild(d);
+      }
+    }
+  };
+  $('#scroll').querySelectorAll('label.ci input').forEach(cb => {
+    cb.addEventListener('change', () => { store.checks[cb.id] = cb.checked; save(); upd(); });
+  });
+  $('#reset').addEventListener('click', () => {
+    if (confirm('체크한 항목과 메모를 모두 지울까요?')) {
+      store.checks = {}; store.memo = ''; save(); renderCheck(); toast('초기화했습니다');
+    }
+  });
+  let memoT;
+  const memo = $('#memo');
+  memo.addEventListener('input', () => {
+    store.memo = memo.value; save();
+    const s = $('#msaved'); s.classList.add('show');
+    clearTimeout(memoT); memoT = setTimeout(() => s.classList.remove('show'), 1200);
+  });
+  upd();
+}
+
+/* ---------- tabs ---------- */
+function renderTabs() {
+  const tabs = $('#tabs');
+  tabs.innerHTML = D.days.map(d => `<button data-day="${d.id}"><span class="t1">${d.label} ${d.date.split(' ')[0]}</span><span class="t2">${d.date.split(' ')[1]}</span></button>`).join('')
+    + `<button data-day="check"><span class="t1">체크리스트</span><span class="t2">24항목</span></button>`;
+  tabs.querySelectorAll('button').forEach(b => b.addEventListener('click', () => select(b.dataset.day)));
+}
+
+function select(key) {
+  document.querySelectorAll('#tabs button').forEach(b => b.classList.toggle('on', b.dataset.day === key));
+  if (key === 'check') { closeDetail(); renderCheck(); return; }
+  closeDetail();
+  renderDay(key);
+}
+
+/* ---------- buttons ---------- */
+$('#btnFit').addEventListener('click', () => { if (state.day) { fitDay(true); toast('전체 경로를 봅니다'); } });
+$('#btnExpand').addEventListener('click', () => {
+  const p = $('#panel');
+  const small = p.classList.toggle('small');
+  $('#btnExpand').classList.toggle('on', small);
+  $('#btnExpand').textContent = small ? '⤓' : '⤒';
+  setTimeout(() => { map.invalidateSize(); if (state.day && !$('#detail').classList.contains('open')) fitDay(true); }, 320);
+});
+
+/* card taps */
+$('#scroll').addEventListener('click', e => {
+  if (e.target.closest('#fitlink')) { fitDay(true); toast('전체 경로를 봅니다'); return; }
+  const card = e.target.closest('.card');
+  if (card) openStop(+card.dataset.n);
+});
+
+/* ---------- boot ---------- */
+renderTabs();
+select(TRIP_DAYS[todayKey()] || 'd1');
+window.addEventListener('resize', () => map.invalidateSize());
+let zt;
+map.on('zoomend', () => { clearTimeout(zt); zt = setTimeout(refreshPins, 120); });
+</script>
+</body>
+</html>
